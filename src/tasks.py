@@ -174,8 +174,8 @@ class RBFClassification(LinearClassification):
 
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        self.center = torch.normal(n_dims, torch.Tensor(scale))
-        self.radius = torch.normal(torch.Tensor([0]), torch.Tensor([scale]))
+        self.center = torch.normal(n_dims)
+        self.radius = torch.normal(torch.Tensor([0]))
 
     def evaluate(self, xs_b):
         dist = [torch.dist(point, self.center).item() for point in xs_b]
