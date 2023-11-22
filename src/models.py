@@ -37,6 +37,10 @@ def get_relevant_baselines(task_name):
             (NNModel, {"n_neighbors": 3}),
             (AveragingModel, {}),
         ],
+        "rbf_classfication": [
+            (NNModel, {"n_neighbors": 3}),
+            (AveragingModel, {}),
+        ],
         "sparse_linear_regression": [
             (LeastSquaresModel, {}),
             (NNModel, {"n_neighbors": 3}),
