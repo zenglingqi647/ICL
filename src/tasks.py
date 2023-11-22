@@ -180,7 +180,7 @@ class RBFClassification(LinearClassification):
     def evaluate(self, xs_b):
         dist = [torch.dist(point, self.center).item() for point in xs_b]
         label = torch.Tensor([1 if d < self.radius else 0 for d in dist])
-        return torch.Tensor(label)
+        return torch.Tensor(label).unsqueeze(1)
 
 
 class NoisyLinearRegression(LinearRegression):
