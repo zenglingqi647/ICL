@@ -169,6 +169,18 @@ class LinearClassification(LinearRegression):
     def get_training_metric():
         return cross_entropy
 
+class RBFLogisticRegression(LinearClassification):
+
+    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.center = torch.normal(n_dims, torch.Tensor(scale))
+        self.radius = torch.normal(torch.Tensor([0]), torch.Tensor([scale]))
+
+    def evaluate(self, xs_b):
+        dist = [torch.dist(point, self.center).item() for point in xs_b]
+        label = torch.Tensor([1 if d < self.radius else 0 for d in dist])
+        return torch.Tensor(label)
+
 
 class NoisyLinearRegression(LinearRegression):
     def __init__(
