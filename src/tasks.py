@@ -175,12 +175,13 @@ class RBFClassification(LinearClassification):
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
         self.center = torch.randn(n_dims)
-        self.radius = torch.randn(1)
 
     def evaluate(self, xs_b):
-        dist = [torch.dist(point, self.center).item() for point in xs_b]
-        label = torch.Tensor([1 if d < self.radius else 0 for d in dist])
-        return torch.Tensor(label).unsqueeze(-1)
+        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
+        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
+        medians, _ = torch.median(dist, dim=1, keepdim=True)
+        medians += 1e-6
+        return (dist - medians).sign()
 
 
 class NoisyLinearRegression(LinearRegression):

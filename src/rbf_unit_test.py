@@ -1,5 +1,5 @@
-from tasks import RBFLogisticRegression
+from tasks import RBFClassification
 import torch
 
-task = RBFLogisticRegression(10, 5)
-task.evaluate(torch.normal(torch.zeros((5, 10))))
+task = RBFClassification(10, 5)
+print(task.evaluate(torch.normal(torch.zeros((5, 10)))))

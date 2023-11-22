@@ -3,4 +3,4 @@ __pycache__
 models.zip
 
 /models/
-src/conf/wandb.yaml
+/src/conf/wandb.yaml
