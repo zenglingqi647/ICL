@@ -1,4 +1,6 @@
 .ipynb_checkpoints
 __pycache__
 models.zip
-models
+
+models/
+src/conf/wandb.yaml
