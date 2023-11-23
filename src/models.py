@@ -2,12 +2,17 @@ import torch
 import torch.nn as nn
 from transformers import GPT2Model, GPT2Config
 from tqdm import tqdm
-from sklearn.svm import LinearSVC
-from sklearn.linear_model import LogisticRegression, Lasso
-from sklearn.metrics.pairwise import rbf_kernel
 import warnings
-from sklearn import tree
 import xgboost as xgb
+
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression, Lasso
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn import tree
+# from sklearn.neighbors import KNeighborsClassifier
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
 
 from base_models import NeuralNetwork, ParallelNetworks
 
@@ -36,17 +41,27 @@ def get_relevant_baselines(task_name):
             }),
             (AveragingModel, {}),
         ],
-        "linear_classification": [
+        "logistic_regression": [
             (NNModel, {
                 "n_neighbors": 3
             }),
-            (AveragingModel, {}),
+            (LDAModel, {}),
+            (SVMModel, {}),
         ],
-        "rbf_classfication": [
+        "rbf_logistic_regression": [
             (NNModel, {
                 "n_neighbors": 3
             }),
-            (AveragingModel, {}),
+            (GPModel, {}),
+            (RBFGPModel, {
+                "length_scale": 1.0
+            }),
+            (SVMModel, {
+                "kernel": 'rbf'
+            }),
+            (RBFNNModel, {
+                "n_neighbors": 3
+            }),
         ],
         "sparse_linear_regression": [
             (LeastSquaresModel, {}),
@@ -189,6 +204,54 @@ class NNModel:
             for y, w, n in zip(train_ys, weights, ranks):
                 y, w = y[n], w[n]
                 pred.append((w * y).sum() / w.sum())
+            preds.append(torch.stack(pred))
+
+        return torch.stack(preds, dim=1)
+
+
+class RBFNNModel:
+
+    def __init__(self, n_neighbors=3, gamma=1.0):
+        self.n_neighbors = n_neighbors
+        self.gamma = gamma
+        self.name = f"RBF_NN_n={n_neighbors}_gamma={gamma}"
+
+    def _apply_rbf_kernel(self, X1, X2):
+        return torch.tensor(rbf_kernel(X1, X2, gamma=self.gamma))
+
+    def __call__(self, xs, ys, inds=None):
+        xs, ys = xs.cpu(), ys.cpu()
+        if inds is None:
+            inds = range(ys.shape[1])
+        else:
+            if max(inds) >= ys.shape[1] or min(inds) < 0:
+                raise ValueError("inds contain indices where xs and ys are not defined")
+
+        preds = []
+
+        for i in inds:
+            if i == 0:
+                preds.append(torch.zeros_like(ys[:, 0]))  # predict zero for first point
+                continue
+            train_xs, train_ys = xs[:, :i], ys[:, :i]
+            test_x = xs[:, i:i + 1]
+
+            # Apply RBF kernel
+            kernel_train = self._apply_rbf_kernel(train_xs, train_xs)
+            kernel_test = self._apply_rbf_kernel(test_x, train_xs)
+
+            # Compute distances in the kernel space
+            dist = (kernel_train - kernel_test).square().sum(dim=2).sqrt()
+
+            # Find k nearest neighbors
+            k = min(i, self.n_neighbors)
+            ranks = dist.argsort()[:, :k]
+
+            # Compute predictions
+            pred = []
+            for y, n in zip(train_ys, ranks):
+                y = y[n]
+                pred.append(y.mean())
             preds.append(torch.stack(pred))
 
         return torch.stack(preds, dim=1)
@@ -601,3 +664,155 @@ class XGBoostModel:
             preds.append(pred)
 
         return torch.stack(preds, dim=1)
+
+
+class LDAModel:
+
+    def __init__(self):
+        self.name = "lda"
+
+    def __call__(self, xs, ys, inds=None):
+        xs, ys = xs.cpu(), ys.cpu()
+
+        if inds is None:
+            inds = range(ys.shape[1])
+        else:
+            if max(inds) >= ys.shape[1] or min(inds) < 0:
+                raise ValueError("inds contain indices where xs and ys are not defined")
+
+        preds = []
+
+        for i in inds:
+            pred = torch.zeros_like(ys[:, 0])
+
+            if i > 0:
+                pred = torch.zeros_like(ys[:, 0])
+                for j in range(ys.shape[0]):
+                    train_xs, train_ys = xs[j, :i], ys[j, :i]
+
+                    clf = LinearDiscriminantAnalysis()
+
+                    clf.fit(train_xs, train_ys)
+                    test_x = xs[j, i:i + 1]
+                    y_pred = clf.predict(test_x)
+
+                    pred[j] = y_pred[0]
+
+            preds.append(pred)
+
+        return torch.stack(preds, dim=1)
+
+
+class SVMModel:
+
+    def __init__(self, kernel='linear', C=1.0):
+        # for the rbf kernelized version, use kernel='rbf'
+        self.name = "support_vector_machine"
+        self.kernel = kernel
+        self.C = C
+
+    def __call__(self, xs, ys, inds=None):
+        xs, ys = xs.cpu(), ys.cpu()
+
+        if inds is None:
+            inds = range(ys.shape[1])
+        else:
+            if max(inds) >= ys.shape[1] or min(inds) < 0:
+                raise ValueError("inds contain indices where xs and ys are not defined")
+
+        preds = []
+
+        for i in inds:
+            pred = torch.zeros_like(ys[:, 0])
+
+            if i > 0:
+                pred = torch.zeros_like(ys[:, 0])
+                for j in range(ys.shape[0]):
+                    train_xs, train_ys = xs[j, :i], ys[j, :i]
+
+                    # SVM model
+                    clf = SVC(kernel=self.kernel, C=self.C, probability=True)
+
+                    clf.fit(train_xs, train_ys)
+                    test_x = xs[j, i:i + 1]
+                    y_pred = clf.predict(test_x)
+
+                    pred[j] = y_pred[0]
+
+            preds.append(pred)
+
+        return torch.stack(preds, dim=1)
+
+
+class RBFGPModel:
+
+    def __init__(self, length_scale=1.0):
+        self.length_scale = length_scale
+        self.name = f"GaussianProcessRBF_length_scale={length_scale}"
+        self.kernel = 1.0 * RBF(length_scale=self.length_scale)
+        self.model = GaussianProcessClassifier(kernel=self.kernel)
+
+    def __call__(self, xs, ys, inds=None):
+        xs, ys = xs.cpu(), ys.cpu()
+
+        if inds is None:
+            inds = range(ys.shape[1])
+        else:
+            if max(inds) >= ys.shape[1] or min(inds) < 0:
+                raise ValueError("inds contain indices where xs and ys are not defined")
+
+        preds = []
+
+        for i in inds:
+            if i == 0:
+                preds.append(torch.zeros_like(ys[:, 0]))  # predict zero for first point
+                continue
+            train_xs, train_ys = xs[:, :i], ys[:, :i]
+            test_x = xs[:, i:i + 1]
+
+            self.model.fit(train_xs, train_ys)
+            y_pred = self.model.predict_proba(test_x)
+            pred = y_pred[:, 1]  # Assuming binary classification
+            preds.append(torch.tensor(pred))
+
+        return torch.stack(preds, dim=1)
+
+
+class GPModel:
+
+    def __init__(self):
+        self.name = "gaussian_process_classifier"
+
+    def __call__(self, xs, ys, inds=None):
+        xs, ys = xs.cpu(), ys.cpu()
+
+        if inds is None:
+            inds = range(ys.shape[1])
+        else:
+            if max(inds) >= ys.shape[1] or min(inds) < 0:
+                raise ValueError("inds contain indices where xs and ys are not defined")
+
+        preds = []
+
+        for i in inds:
+            pred = torch.zeros_like(ys[:, 0])
+
+            if i > 0:
+                for j in range(ys.shape[0]):
+                    train_xs, train_ys = xs[j, :i], ys[j, :i]
+                    test_x = xs[j, i:i + 1]
+
+                    clf = GaussianProcessClassifier()
+                    clf.fit(train_xs, train_ys)
+
+                    y_pred = clf.predict_proba(test_x)
+                    pred[j] = y_pred[0, 1]  # Assuming binary classification
+
+            preds.append(pred)
+
+        return torch.stack(preds, dim=1)
+
+
+if __name__ == "__main__":
+    # test the implementations
+    pass
