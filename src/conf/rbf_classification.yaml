@@ -9,6 +9,9 @@ training:
             end: 41
             inc: 2
             interval: 2000
+    resume_id: f3acb82e-e5a1-4de4-9565-1624ace1b923
+
+
 
 out_dir: ../models/rbf_classification
 
