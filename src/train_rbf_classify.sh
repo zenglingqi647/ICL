@@ -28,6 +28,6 @@
 #SBATCH --time=24:00:00
 
 ## Command(s) to run:
-python train.py -conf conf/linear_classification.yaml &
+python train.py --config conf/linear_classification.yaml &
 sleep 2
-python train.py -conf conf/rbf_classification.yaml &
+python train.py --config conf/rbf_classification.yaml &
