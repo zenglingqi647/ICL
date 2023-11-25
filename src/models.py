@@ -13,6 +13,8 @@ from sklearn import tree
 # from sklearn.neighbors import KNeighborsClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 from base_models import NeuralNetwork, ParallelNetworks
 
@@ -720,7 +722,7 @@ class SVMModel:
 
     def __init__(self, kernel='linear', C=1.0):
         # for the rbf kernelized version, use kernel='rbf'
-        self.name = f"svm-{kernel}"
+        self.name = f"svm_{kernel}"
         self.kernel = kernel
         self.C = C
 
@@ -799,8 +801,8 @@ class GPModel:
 class RBFGPModel:
 
     def __init__(self, kernel=None, length_scale=1.0):
-        self.name = "gaussian_process_classifier"
-        self.kernel = kernel if kernel is not None else 1.0 * RBF(length_scale=length_scale)
+        self.name = "rbf_gaussian_process_classifier"
+        self.kernel = kernel if kernel is not None else RBF(length_scale=length_scale, length_scale_bounds=(1e-7, 1e7))
 
     def __call__(self, xs, ys, inds=None):
         xs, ys = xs.cpu(), ys.cpu()
@@ -823,7 +825,8 @@ class RBFGPModel:
                         continue
                     test_x = xs[j, i:i + 1]
 
-                    clf = GaussianProcessClassifier(kernel=self.kernel)
+                    clf = make_pipeline(StandardScaler(), GaussianProcessClassifier(kernel=self.kernel))
+                    # clf = GaussianProcessClassifier(kernel=self.kernel)
                     clf.fit(train_xs, train_ys)
 
                     y_pred = clf.predict_proba(test_x)
@@ -835,9 +838,9 @@ class RBFGPModel:
 
 
 if __name__ == "__main__":
-    from tasks import RBFClassification
+    from tasks import RBFLogisticRegression
 
-    task = RBFClassification(5, 64)
+    task = RBFLogisticRegression(5, 64)
     xs = torch.normal(torch.zeros((64, 11, 5)))
     ys = task.evaluate(xs)
 

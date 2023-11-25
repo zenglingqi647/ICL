@@ -55,8 +55,8 @@ def get_task_sampler(
     task_names_to_classes = {
         "linear_regression": LinearRegression,
         "sparse_linear_regression": SparseLinearRegression,
-        "linear_classification": LinearClassification,
-        "rbf_classification": RBFClassification,
+        "logistic_regression": LogisticRegression,
+        "rbf_logistic_regression": RBFLogisticRegression,
         "noisy_linear_regression": NoisyLinearRegression,
         "quadratic_regression": QuadraticRegression,
         "relu_2nn_regression": Relu2nnRegression,
@@ -157,7 +157,7 @@ class SparseLinearRegression(LinearRegression):
         return mean_squared_error
 
 
-class LinearClassification(LinearRegression):
+class LogisticRegression(LinearRegression):
     def evaluate(self, xs_b):
         ys_b = super().evaluate(xs_b)
         return ys_b.sign()
@@ -170,7 +170,7 @@ class LinearClassification(LinearRegression):
     def get_training_metric():
         return cross_entropy
 
-class RBFClassification(LinearClassification):
+class RBFLogisticRegression(LogisticRegression):
 
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
