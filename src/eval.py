@@ -338,6 +338,8 @@ def baseline_names(name):
         return "Averaging"
     if "NN" in name:
         k = name.split("_")[1].split("=")[1]
+        if "RBFNN" in name:
+            return f"{k}-Nearest Neighbors (RBF)"
         return f"{k}-Nearest Neighbors"
     if "lasso" in name:
         alpha = name.split("_")[1].split("=")[1]
@@ -348,6 +350,14 @@ def baseline_names(name):
         return "Greedy Tree Learning"
     if "xgboost" in name:
         return "XGBoost"
+    if "svm" in name:
+        if "rbf" in name:
+            return "SVM (RBF)"
+        return "SVM"
+    if "gaussian_process_classifier":
+        if "rbf" in name:
+            return "Gaussian Process Classifier (RBF)"
+        return "Gaussian Process Classifier"
     return name
 
 

@@ -69,7 +69,7 @@ def basic_plot(metrics, y_axis_name, models=None, trivial=1.0):
     ax.set_xlabel("in-context examples")
     ax.set_ylabel(y_axis_name)
     ax.set_xlim(-1, len(low) + 0.1)
-    ax.set_ylim(-0.1, 1.25)
+    ax.set_ylim(-0.1, 1.1)
 
     legend = ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
     fig.set_size_inches(4, 3)
