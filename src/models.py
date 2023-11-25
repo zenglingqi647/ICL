@@ -835,9 +835,9 @@ class RBFGPModel:
 
 
 if __name__ == "__main__":
-    from tasks import RBFClassification
+    from tasks import RBFLogisticRegression
 
-    task = RBFClassification(5, 64)
+    task = RBFLogisticRegression(5, 64)
     xs = torch.normal(torch.zeros((64, 11, 5)))
     ys = task.evaluate(xs)
 
