@@ -52,7 +52,7 @@ relevant_model_names = {
 }
 
 
-def basic_plot(metrics, models=None, trivial=1.0):
+def basic_plot(metrics, y_axis_name, models=None, trivial=1.0):
     fig, ax = plt.subplots(1, 1)
 
     if models is not None:
@@ -67,7 +67,7 @@ def basic_plot(metrics, models=None, trivial=1.0):
         ax.fill_between(range(len(low)), low, high, alpha=0.3)
         color += 1
     ax.set_xlabel("in-context examples")
-    ax.set_ylabel("squared error")
+    ax.set_ylabel(y_axis_name)
     ax.set_xlim(-1, len(low) + 0.1)
     ax.set_ylim(-0.1, 1.25)
 
@@ -111,6 +111,8 @@ def collect_results(run_dir, df, valid_row=None, rename_eval=None, rename_model=
                 if r.task == "sparse_linear_regression":
                     normalization = int(r.kwargs.split("=")[-1])
                 if r.task == "decision_tree":
+                    normalization = 1
+                if r.task == "rbf_logistic_regression":
                     normalization = 1
 
                 for k, v in m.items():

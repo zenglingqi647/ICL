@@ -56,7 +56,7 @@ def get_task_sampler(
         "linear_regression": LinearRegression,
         "sparse_linear_regression": SparseLinearRegression,
         "linear_classification": LinearClassification,
-        "rbf_classification": RBFClassification,
+        "rbf_logistic_regression": RBFClassification,
         "noisy_linear_regression": NoisyLinearRegression,
         "quadratic_regression": QuadraticRegression,
         "relu_2nn_regression": Relu2nnRegression,
