@@ -48,7 +48,7 @@ def get_relevant_baselines(task_name):
             (LDAModel, {}),
             (SVMModel, {}),
         ],
-        "rbf_logistic_regression": [
+        "rbf_classification": [
             (NNModel, {
                 "n_neighbors": 3
             }),
