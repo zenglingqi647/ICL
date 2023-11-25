@@ -37,6 +37,18 @@ relevant_model_names = {
         "3-Nearest Neighbors",
         "2-layer NN, GD",
     ],
+    "logistic_regression": [
+        "3-Nearest Neighbors",
+        "lda",
+        "svm-linear"
+    ],
+    "rbf_logistic_regression": [
+        "3-Nearest Neighbors",
+        "svm-rbf",
+        "gp",
+        "gp-rbf",
+        "3-nn-rbf"
+    ],
 }
 
 
