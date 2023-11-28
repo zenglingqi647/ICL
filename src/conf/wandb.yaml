@@ -1,5 +1,5 @@
 wandb:
-    project: cs182-fa23-proj
-    entity: inf-polygon
+    project: in-context-training-encoder
+    entity: afkl
     notes:
     log_every_steps: 100

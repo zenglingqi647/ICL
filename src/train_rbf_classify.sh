@@ -31,3 +31,4 @@
 python train.py --config conf/logistic_regression.yaml &
 sleep 2
 python train.py --config conf/rbf_logistic_regression.yaml &
+

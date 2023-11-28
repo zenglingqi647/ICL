@@ -6,3 +6,4 @@ rbf_logistic_regression.zip
 
 /models/
 /src/conf/wandb.yaml
+rbf_classification.zip

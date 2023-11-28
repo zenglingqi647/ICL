@@ -26,6 +26,7 @@ def cross_entropy(ys_pred, ys):
 
 
 class Task:
+
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None):
         self.n_dims = n_dims
         self.b_size = batch_size
@@ -49,9 +50,7 @@ class Task:
         raise NotImplementedError
 
 
-def get_task_sampler(
-    task_name, n_dims, batch_size, pool_dict=None, num_tasks=None, **kwargs
-):
+def get_task_sampler(task_name, n_dims, batch_size, pool_dict=None, num_tasks=None, **kwargs):
     task_names_to_classes = {
         "linear_regression": LinearRegression,
         "sparse_linear_regression": SparseLinearRegression,
@@ -75,6 +74,7 @@ def get_task_sampler(
 
 
 class LinearRegression(Task):
+
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
         """scale: a constant by which to scale the randomly sampled weights."""
         super(LinearRegression, self).__init__(n_dims, batch_size, pool_dict, seeds)
@@ -113,6 +113,7 @@ class LinearRegression(Task):
 
 
 class SparseLinearRegression(LinearRegression):
+
     def __init__(
         self,
         n_dims,
@@ -124,9 +125,7 @@ class SparseLinearRegression(LinearRegression):
         valid_coords=None,
     ):
         """scale: a constant by which to scale the randomly sampled weights."""
-        super(SparseLinearRegression, self).__init__(
-            n_dims, batch_size, pool_dict, seeds, scale
-        )
+        super(SparseLinearRegression, self).__init__(n_dims, batch_size, pool_dict, seeds, scale)
         self.sparsity = sparsity
         if valid_coords is None:
             valid_coords = n_dims
@@ -158,6 +157,7 @@ class SparseLinearRegression(LinearRegression):
 
 
 class LogisticRegression(LinearRegression):
+
     def evaluate(self, xs_b):
         ys_b = super().evaluate(xs_b)
         return ys_b.sign()
@@ -169,6 +169,48 @@ class LogisticRegression(LinearRegression):
     @staticmethod
     def get_training_metric():
         return cross_entropy
+
+
+class NoisyLogisticRegression(LogisticRegression):
+    """
+    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
+    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
+    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
+    """
+
+    def __init__(self,
+                 n_dims,
+                 batch_size,
+                 pool_dict=None,
+                 seeds=None,
+                 scale=1,
+                 train_noise_prob=0,
+                 test_noise_prob=0,
+                 if_test=False):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.train_noise_prob = train_noise_prob
+        self.test_noise_prob = test_noise_prob
+        self.if_test = if_test
+
+    def evaluate(self, xs_b):
+        ys_b = super().evaluate(xs_b)
+        signs = ys_b.sign()
+
+        # add noise with flipping probability noise_prob
+        noise_prob = self.test_noise_prob if self.if_test else self.train_noise_prob
+        noise_mask = torch.rand(signs.shape) < noise_prob
+        signs[noise_mask] *= -1
+
+        return signs
+
+    @staticmethod
+    def get_metric():
+        return accuracy
+
+    @staticmethod
+    def get_training_metric():
+        return cross_entropy
+
 
 class RBFLogisticRegression(LogisticRegression):
 
@@ -184,7 +226,71 @@ class RBFLogisticRegression(LogisticRegression):
         return (dist - medians).sign()
 
 
+class NoisyRBFLogisticRegression(LogisticRegression):
+    """
+    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
+    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
+    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
+    """
+
+    def __init__(self,
+                 n_dims,
+                 batch_size,
+                 pool_dict=None,
+                 seeds=None,
+                 scale=1,
+                 train_noise_prob=0,
+                 test_noise_prob=0,
+                 if_test=False):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.center = torch.randn(n_dims)
+        self.train_noise_prob = train_noise_prob
+        self.test_noise_prob = test_noise_prob
+        self.if_test = if_test
+
+    def evaluate(self, xs_b):
+        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
+        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
+        medians, _ = torch.median(dist, dim=1, keepdim=True)
+        medians += 1e-6
+        signs = (dist - medians).sign()
+
+        # apply noise
+        noise_prob = self.test_noise_prob if self.if_test else self.train_noise_prob
+        noise_mask = torch.rand(signs.shape) < noise_prob
+        signs[noise_mask] *= -1
+
+        return signs
+
+
+class NoisyRBFLogisticRegression(LogisticRegression):
+    """
+    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
+    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
+    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
+    """
+
+    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1, noise_prob=0):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.center = torch.randn(n_dims)
+        self.noise_prob = noise_prob
+
+    def evaluate(self, xs_b):
+        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
+        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
+        medians, _ = torch.median(dist, dim=1, keepdim=True)
+        medians += 1e-6
+        signs = (dist - medians).sign()
+
+        # Apply noise
+        noise_mask = torch.rand(signs.shape) < self.noise_prob
+        signs[noise_mask] *= -1
+
+        return signs
+
+
 class NoisyLinearRegression(LinearRegression):
+
     def __init__(
         self,
         n_dims,
@@ -196,9 +302,7 @@ class NoisyLinearRegression(LinearRegression):
         renormalize_ys=False,
     ):
         """noise_std: standard deviation of noise added to the prediction."""
-        super(NoisyLinearRegression, self).__init__(
-            n_dims, batch_size, pool_dict, seeds, scale
-        )
+        super(NoisyLinearRegression, self).__init__(n_dims, batch_size, pool_dict, seeds, scale)
         self.noise_std = noise_std
         self.renormalize_ys = renormalize_ys
 
@@ -212,6 +316,7 @@ class NoisyLinearRegression(LinearRegression):
 
 
 class QuadraticRegression(LinearRegression):
+
     def evaluate(self, xs_b):
         w_b = self.w_b.to(xs_b.device)
         ys_b_quad = ((xs_b**2) @ w_b)[:, :, 0]
@@ -223,6 +328,7 @@ class QuadraticRegression(LinearRegression):
 
 
 class Relu2nnRegression(Task):
+
     def __init__(
         self,
         n_dims,
@@ -247,9 +353,7 @@ class Relu2nnRegression(Task):
             assert len(seeds) == self.b_size
             for i, seed in enumerate(seeds):
                 generator.manual_seed(seed)
-                self.W1[i] = torch.randn(
-                    self.n_dims, hidden_layer_size, generator=generator
-                )
+                self.W1[i] = torch.randn(self.n_dims, hidden_layer_size, generator=generator)
                 self.W2[i] = torch.randn(hidden_layer_size, 1, generator=generator)
         else:
             assert "W1" in pool_dict and "W2" in pool_dict
@@ -285,6 +389,7 @@ class Relu2nnRegression(Task):
 
 
 class DecisionTree(Task):
+
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, depth=4):
 
         super(DecisionTree, self).__init__(n_dims, batch_size, pool_dict, seeds)
@@ -295,15 +400,13 @@ class DecisionTree(Task):
             # We represent the tree using an array (tensor). Root node is at index 0, its 2 children at index 1 and 2...
             # dt_tensor stores the coordinate used at each node of the decision tree.
             # Only indices corresponding to non-leaf nodes are relevant
-            self.dt_tensor = torch.randint(
-                low=0, high=n_dims, size=(batch_size, 2 ** (depth + 1) - 1)
-            )
+            self.dt_tensor = torch.randint(low=0, high=n_dims, size=(batch_size, 2**(depth + 1) - 1))
 
             # Target value at the leaf nodes.
             # Only indices corresponding to leaf nodes are relevant.
             self.target_tensor = torch.randn(self.dt_tensor.shape)
         elif seeds is not None:
-            self.dt_tensor = torch.zeros(batch_size, 2 ** (depth + 1) - 1)
+            self.dt_tensor = torch.zeros(batch_size, 2**(depth + 1) - 1)
             self.target_tensor = torch.zeros_like(dt_tensor)
             generator = torch.Generator()
             assert len(seeds) == self.b_size
@@ -312,12 +415,10 @@ class DecisionTree(Task):
                 self.dt_tensor[i] = torch.randint(
                     low=0,
                     high=n_dims - 1,
-                    size=2 ** (depth + 1) - 1,
+                    size=2**(depth + 1) - 1,
                     generator=generator,
                 )
-                self.target_tensor[i] = torch.randn(
-                    self.dt_tensor[i].shape, generator=generator
-                )
+                self.target_tensor[i] = torch.randn(self.dt_tensor[i].shape, generator=generator)
         else:
             raise NotImplementedError
 
