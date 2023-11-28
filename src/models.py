@@ -58,7 +58,7 @@ def get_relevant_baselines(task_name):
             (AveragingModel, {}),
         ],
         "logistic_regression": [
-            # (LogisticModel, {}),
+            (LogisticModel, {}),
             (NNModel, {
                 "n_neighbors": 3
             }),
@@ -67,9 +67,9 @@ def get_relevant_baselines(task_name):
         ],
         "rbf_logistic_regression": [
             # ? is the baseline included?
-            # (RBFLogisticModel, {
-            #     "gamma": 0.1
-            # }),
+            (RBFLogisticModel, {
+                "gamma": 0.1
+            }),
             (LogisticModel, {}),
             (NNModel, {
                 "n_neighbors": 3
