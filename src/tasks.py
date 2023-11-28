@@ -171,7 +171,104 @@ class LogisticRegression(LinearRegression):
         return cross_entropy
 
 
+class NoisyLogisticRegression(LogisticRegression):
+    """
+    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
+    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
+    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
+    """
+
+    def __init__(self,
+                 n_dims,
+                 batch_size,
+                 pool_dict=None,
+                 seeds=None,
+                 scale=1,
+                 train_noise_prob=0,
+                 test_noise_prob=0,
+                 if_test=False):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.train_noise_prob = train_noise_prob
+        self.test_noise_prob = test_noise_prob
+        self.if_test = if_test
+
+    def evaluate(self, xs_b):
+        ys_b = super().evaluate(xs_b)
+        signs = ys_b.sign()
+
+        # add noise with flipping probability noise_prob
+        noise_prob = self.test_noise_prob if self.if_test else self.train_noise_prob
+        noise_mask = torch.rand(signs.shape) < noise_prob
+        signs[noise_mask] *= -1
+
+        return signs
+
+    @staticmethod
+    def get_metric():
+        return accuracy
+
+    @staticmethod
+    def get_training_metric():
+        return cross_entropy
+
+
 class RBFLogisticRegression(LogisticRegression):
+
+    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.center = torch.randn(n_dims)
+
+    def evaluate(self, xs_b):
+        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
+        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
+        medians, _ = torch.median(dist, dim=1, keepdim=True)
+        medians += 1e-6
+        return (dist - medians).sign()
+
+
+class NoisyRBFLogisticRegression(LogisticRegression):
+    """
+    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
+    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
+    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
+    """
+
+    def __init__(self,
+                 n_dims,
+                 batch_size,
+                 pool_dict=None,
+                 seeds=None,
+                 scale=1,
+                 train_noise_prob=0,
+                 test_noise_prob=0,
+                 if_test=False):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
+        self.center = torch.randn(n_dims)
+        self.train_noise_prob = train_noise_prob
+        self.test_noise_prob = test_noise_prob
+        self.if_test = if_test
+
+    def evaluate(self, xs_b):
+        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
+        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
+        medians, _ = torch.median(dist, dim=1, keepdim=True)
+        medians += 1e-6
+        signs = (dist - medians).sign()
+
+        # apply noise
+        noise_prob = self.test_noise_prob if self.if_test else self.train_noise_prob
+        noise_mask = torch.rand(signs.shape) < noise_prob
+        signs[noise_mask] *= -1
+
+        return signs
+
+
+class NoisyRBFLogisticRegression(LogisticRegression):
+    """
+    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
+    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
+    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
+    """
 
     def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1, noise_prob=0):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
