@@ -28,8 +28,8 @@
 #SBATCH --time=24:00:00
 
 ## Command(s) to run:
-python train.py --config conf/logistic_regression.yaml &
+python train.py --config conf/noisy_logistic_regression.yaml &
 sleep 2
-python train.py --config conf/rbf_logistic_regression.yaml &
+python train.py --config conf/noisy_rbf_logistic_regression.yaml &
 wait
 
