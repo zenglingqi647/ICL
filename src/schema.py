@@ -38,7 +38,9 @@ TASK_LIST = [
     "linear_regression",
     "sparse_linear_regression",
     "logistic_regression",
+    "noisy_logistic_regression",
     "rbf_logistic_regression",
+    "noisy_rbf_logistic_regression",
     "relu_2nn_regression",
     "decision_tree",
 ]

@@ -55,7 +55,9 @@ def get_task_sampler(task_name, n_dims, batch_size, pool_dict=None, num_tasks=No
         "linear_regression": LinearRegression,
         "sparse_linear_regression": SparseLinearRegression,
         "logistic_regression": LogisticRegression,
+        "noisy_logistic_regression" : NoisyLogisticRegression,
         "rbf_logistic_regression": RBFLogisticRegression,
+        "noisy_rbf_logistic_regression": NoisyRBFLogisticRegression,
         "noisy_linear_regression": NoisyLinearRegression,
         "quadratic_regression": QuadraticRegression,
         "relu_2nn_regression": Relu2nnRegression,
@@ -186,22 +188,22 @@ class NoisyLogisticRegression(LogisticRegression):
                  scale=1,
                  train_noise_prob=0,
                  test_noise_prob=0,
-                 if_test=False):
+                 if_test=False,
+                 **kwargs):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        self.train_noise_prob = train_noise_prob
-        self.test_noise_prob = test_noise_prob
-        self.if_test = if_test
+        self.train_noise_prob = kwargs.get('train_noise_prob', train_noise_prob)
+        self.test_noise_prob = kwargs.get('test_noise_prob', test_noise_prob)
+        self.if_test = kwargs.get("if_test", if_test)
 
     def evaluate(self, xs_b):
-        ys_b = super().evaluate(xs_b)
-        signs = ys_b.sign()
+        labels = super().evaluate(xs_b)
 
         # add noise with flipping probability noise_prob
         noise_prob = self.test_noise_prob if self.if_test else self.train_noise_prob
-        noise_mask = torch.rand(signs.shape) < noise_prob
-        signs[noise_mask] *= -1
+        noise_mask = torch.rand(labels.shape) < noise_prob
+        labels[noise_mask] *= -1
 
-        return signs
+        return labels
 
     @staticmethod
     def get_metric():
@@ -226,7 +228,7 @@ class RBFLogisticRegression(LogisticRegression):
         return (dist - medians).sign()
 
 
-class NoisyRBFLogisticRegression(LogisticRegression):
+class NoisyRBFLogisticRegression(RBFLogisticRegression):
     """
     1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
     2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
@@ -241,52 +243,23 @@ class NoisyRBFLogisticRegression(LogisticRegression):
                  scale=1,
                  train_noise_prob=0,
                  test_noise_prob=0,
-                 if_test=False):
+                 if_test=False,
+                 **kwargs):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
         self.center = torch.randn(n_dims)
-        self.train_noise_prob = train_noise_prob
-        self.test_noise_prob = test_noise_prob
-        self.if_test = if_test
+        self.train_noise_prob = kwargs.get('train_noise_prob', train_noise_prob)
+        self.test_noise_prob = kwargs.get('test_noise_prob', test_noise_prob)
+        self.if_test = kwargs.get("if_test", if_test)
 
     def evaluate(self, xs_b):
-        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
-        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
-        medians, _ = torch.median(dist, dim=1, keepdim=True)
-        medians += 1e-6
-        signs = (dist - medians).sign()
+        labels = super().evaluate(xs_b)
 
         # apply noise
         noise_prob = self.test_noise_prob if self.if_test else self.train_noise_prob
-        noise_mask = torch.rand(signs.shape) < noise_prob
-        signs[noise_mask] *= -1
+        noise_mask = torch.rand(labels.shape) < noise_prob
+        labels[noise_mask] *= -1
 
-        return signs
-
-
-class NoisyRBFLogisticRegression(LogisticRegression):
-    """
-    1. Add noise when training but not testing: flip the sign of the output with probability train_noise_prob. Expect the model to have a better generalizability.
-    2. Add noise when testing but not training: flip the sign of the output with probability test_noise_prob. Test the performance of the model trained on clean data.
-    3. Add noise when both training and testing: flip the sign of the output with probability train_noise_prob when training, and flip the sign of the output with probability test_noise_prob when testing. Test the performance of the model trained on noisy data.
-    """
-
-    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1, noise_prob=0):
-        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        self.center = torch.randn(n_dims)
-        self.noise_prob = noise_prob
-
-    def evaluate(self, xs_b):
-        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
-        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
-        medians, _ = torch.median(dist, dim=1, keepdim=True)
-        medians += 1e-6
-        signs = (dist - medians).sign()
-
-        # Apply noise
-        noise_mask = torch.rand(signs.shape) < self.noise_prob
-        signs[noise_mask] *= -1
-
-        return signs
+        return labels
 
 
 class NoisyLinearRegression(LinearRegression):

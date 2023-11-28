@@ -5,14 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: noisy_rbf_logistic_regression",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config",
+                "conf/noisy_rbf_logistic_regression.yaml"
+            ],
+        },
+        {
             "name": "Python: logistic_regression",
             "type": "python",
             "request": "launch",
-            "cwd": "/data1/lzengaf/cs182/ICL/src/",
-            "program": "/data1/lzengaf/cs182/ICL/src/train.py",
+            "cwd": "${workspaceFolder}/src",
+            "program": "train.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--config", "conf/logistic_regression.yaml"]
+            "args": [
+                "--config",
+                "conf/logistic_regression.yaml"
+            ],
         }
     ]
 }
