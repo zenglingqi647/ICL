@@ -2,6 +2,7 @@
 __pycache__
 models.zip
 rbf_logistic_regression.zip
+.vscode/
 
 /models/
 /src/conf/wandb.yaml
