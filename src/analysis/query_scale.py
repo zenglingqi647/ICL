@@ -18,35 +18,47 @@ def query_scale(model,
                 conf,
                 scales=[0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16],
                 n_dims_ls=[5, 10, 20, 40, 80],
-                n_points=1280,
+                n_points=[10, 20, 40],
                 batch_size=64):
-    results = {n_dims: [] for n_dims in n_dims_ls}
+    # results = {n_dims: [] for n_dims in n_dims_ls}
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    model.to(device)
 
-    for n_dims in tqdm(n_dims_ls):
+    # for n_dims in tqdm(n_dims_ls):
+    n_dims = conf.model.n_dims
+    batch_size = conf.training.batch_size
+
+    fig, ax = plt.subplots()
+    plt.title("Robustness to Query Scales")
+    plt.xlabel("scale")
+    plt.ylabel("accuracy")
+    ax.set_xscale('log')
+
+    for num_ex in n_points:
+        results = []
         for scale in scales:
             data_sampler = get_data_sampler(conf.training.data, n_dims)
             task_sampler = get_task_sampler(conf.training.task, n_dims, batch_size, **conf.training.task_kwargs)
             task = task_sampler()
-            xs = data_sampler.sample_xs(b_size=batch_size, n_points=n_points)
+            xs = data_sampler.sample_xs(b_size=batch_size, n_points=num_ex)
             xs = xs * scale
             ys = task.evaluate(xs)
             with torch.no_grad():
-                pred = model(xs, ys)
-
+                pred = model(xs.to(device), ys.to(device))
+                pred = pred.cpu()
             metric = task.get_metric()
-            loss = metric(pred, ys).numpy()
-
-            results[n_dims].append(loss.mean(axis=0))
-
-    # Plotting
-    for n_dims, losses in results.items():
-        for i, loss in enumerate(losses):
-            plt.plot(loss, lw=2, label=f"n_dims={n_dims}, scale={scales[i]}")
-
-    plt.xlabel("# in-context examples")
-    plt.ylabel("accuracy")
+            acc = metric(pred, ys).numpy()
+            results.append(acc.mean())
+        plt.plot(scales, results, marker='o', linewidth=2, label=f"{num_ex} examples")
+    
     plt.legend()
     plt.savefig("figs/accuracy.png", bbox_inches='tight')
+
+    # Plotting
+    # for n_dims, losses in results.items():
+    #     for i, loss in enumerate(losses):
+    #         plt.plot(loss, lw=2, label=f"n_dims={n_dims}, scale={scales[i]}")
+    
 
 
 if __name__ == "__main__":

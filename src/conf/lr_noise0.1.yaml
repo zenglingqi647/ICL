@@ -1,0 +1,18 @@
+inherit: 
+    - base.yaml
+
+training:
+    task: noisy_logistic_regression
+    task_kwargs:
+        train_noise_prob: 0.1
+    curriculum:
+        points:
+            start: 11
+            end: 41
+            inc: 2
+            interval: 2000
+
+out_dir: ../models/lr_noise0.1
+
+wandb:
+    name: "lr_noise0.1"
