@@ -360,7 +360,9 @@ def baseline_names(name):
         return "Gaussian Process Classifier"
     if name == "lda":
         return "LDA"
-    if name == "logistic_regression":
+    if "logistic_regression" in name:
+        if "rbf" in name:
+            return "Logistic Regression (RBF)"
         return "Logistic Regression"
     return name
 
