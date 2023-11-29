@@ -132,6 +132,9 @@ def get_relevant_baselines(task_name):
         ],
     }
 
+    task_to_baselines["noisy_logistic_regression"] = task_to_baselines["logistic_regression"]
+    task_to_baselines["noisy_rbf_logistic_regression"] = task_to_baselines["rbf_logistic_regression"]
+
     models = [model_cls(**kwargs) for model_cls, kwargs in task_to_baselines[task_name]]
     return models
 
@@ -342,8 +345,8 @@ class LogisticModel:
                         # if all labels are the same, just predict that label
                         pred[j] = train_ys[0]
                     else:
+                        clf = make_pipeline(StandardScaler(), LogisticRegression(fit_intercept=False))
                         # unregularized logistic regression
-                        clf = LogisticRegression(penalty='none', fit_intercept=False)
 
                         clf.fit(train_xs, train_ys)
 
@@ -403,7 +406,7 @@ class RBFLogisticModel:
                         kernel_test = self._apply_rbf_kernel(test_x, train_xs)
 
                         # train logistic regression on the kernel-transformed data
-                        clf = LogisticRegression(penalty='none', fit_intercept=False)
+                        clf = make_pipeline(StandardScaler(), LogisticRegression(fit_intercept=False))
                         clf.fit(kernel_train, train_ys)
 
                         # predict using the kernel-transformed test data

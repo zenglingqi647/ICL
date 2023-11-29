@@ -112,12 +112,10 @@ def collect_results(run_dir, df, valid_row=None, rename_eval=None, rename_model=
                 if r.task in ["relu_2nn_regression", "decision_tree"]:
                     xlim = 200
 
-                normalization = n_dims
+                normalization = 1
                 if r.task == "sparse_linear_regression":
                     normalization = int(r.kwargs.split("=")[-1])
                 if r.task == "decision_tree":
-                    normalization = 1
-                if r.task == "rbf_logistic_regression":
                     normalization = 1
 
                 for k, v in m.items():

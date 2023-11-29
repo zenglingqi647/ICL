@@ -354,10 +354,14 @@ def baseline_names(name):
         if "rbf" in name:
             return "SVM (RBF)"
         return "SVM"
-    if "gaussian_process_classifier":
+    if "gaussian_process_classifier" in name:
         if "rbf" in name:
             return "Gaussian Process Classifier (RBF)"
         return "Gaussian Process Classifier"
+    if name == "lda":
+        return "LDA"
+    if name == "logistic_regression":
+        return "Logistic Regression"
     return name
 
 
