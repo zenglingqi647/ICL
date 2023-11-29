@@ -11,6 +11,7 @@ training:
             end: 41
             inc: 2
             interval: 2000
+    train_steps: 32001
 
 out_dir: ../models/lr_noise0.05
 
