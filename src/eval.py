@@ -370,6 +370,8 @@ def baseline_names(name):
 def read_run_dir(run_dir):
     all_runs = {}
     for task in os.listdir(run_dir):
+        if '.zip' in task:
+            continue
         task_dir = os.path.join(run_dir, task)
         for run_id in os.listdir(task_dir):
             run_path = os.path.join(task_dir, run_id)

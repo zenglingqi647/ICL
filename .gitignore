@@ -1,8 +1,13 @@
 .ipynb_checkpoints
 __pycache__
 models.zip
+models_init.zip
 rbf_logistic_regression.zip
 
 /models/
+src/conf/wandb.yaml
 /src/conf/wandb.yaml
 rbf_classification.zip
+/results/
+/temp/models/
+/temp/rbf_classification/
