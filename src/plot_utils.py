@@ -38,11 +38,16 @@ relevant_model_names = {
         "2-layer NN, GD",
     ],
     "logistic_regression": [
+        # ?same question as below
+        "logistic_regression",
         "3-Nearest Neighbors",
         "lda",
         "svm-linear"
     ],
     "rbf_logistic_regression": [
+        # ? is the implemented rbf logistic regression already included?
+        "rbf_logistic_regression",
+        "logistic_regression",
         "3-Nearest Neighbors",
         "svm-rbf",
         "gp",

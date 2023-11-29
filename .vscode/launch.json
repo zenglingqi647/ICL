@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python: noisy_rbf_logistic_regression",
             "type": "python",
@@ -29,6 +30,18 @@
                 "--config",
                 "conf/logistic_regression.yaml"
             ],
+        },
+        {
+            "name": "Python: query scale",
+            "type": "python",
+            "request": "launch",
+            // "cwd": "${workspaceFolder}/src",
+            "env": {
+                "PYTHONPATH": "/data1/lzengaf/cs182/ICL/src"
+            },
+            "program": "/data1/lzengaf/cs182/ICL/analysis/query_scale.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
         }
     ]
 }
