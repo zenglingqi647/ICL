@@ -17,7 +17,6 @@ from tasks import get_task_sampler
 def query_scale(model,
                 conf,
                 scales=[0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16],
-                n_dims_ls=[5, 10, 20, 40, 80],
                 n_points=[10, 20, 40],
                 batch_size=64):
     # results = {n_dims: [] for n_dims in n_dims_ls}
