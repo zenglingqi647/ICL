@@ -4,7 +4,19 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "name": "Python: noisy_rbf_capacity",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config",
+                "conf/rbf_lr_small_noise0.1.yaml"
+            ],
+        },
         {
             "name": "Python: noisy_rbf_logistic_regression",
             "type": "python",
