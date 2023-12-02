@@ -3,8 +3,7 @@ inherit:
 
 training:
     task: noisy_logistic_regression
-    task_kwargs:
-        train_noise_prob: 0.2
+    task_kwargs: {"train_noise_prob": 0.2}
     curriculum:
         points:
             start: 11

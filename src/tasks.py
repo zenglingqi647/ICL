@@ -188,12 +188,11 @@ class NoisyLogisticRegression(LogisticRegression):
                  scale=1,
                  train_noise_prob=0,
                  test_noise_prob=0,
-                 if_test=False,
-                 **kwargs):
+                 if_test=False):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        self.train_noise_prob = kwargs.get('train_noise_prob', train_noise_prob)
-        self.test_noise_prob = kwargs.get('test_noise_prob', test_noise_prob)
-        self.if_test = kwargs.get("if_test", if_test)
+        self.train_noise_prob = train_noise_prob
+        self.test_noise_prob = test_noise_prob
+        self.if_test = if_test
 
     def evaluate(self, xs_b):
         labels = super().evaluate(xs_b)
@@ -243,13 +242,12 @@ class NoisyRBFLogisticRegression(RBFLogisticRegression):
                  scale=1,
                  train_noise_prob=0,
                  test_noise_prob=0,
-                 if_test=False,
-                 **kwargs):
+                 if_test=False):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
         self.center = torch.randn(n_dims)
-        self.train_noise_prob = kwargs.get('train_noise_prob', train_noise_prob)
-        self.test_noise_prob = kwargs.get('test_noise_prob', test_noise_prob)
-        self.if_test = kwargs.get("if_test", if_test)
+        self.train_noise_prob = train_noise_prob
+        self.test_noise_prob = test_noise_prob
+        self.if_test = if_test
 
     def evaluate(self, xs_b):
         labels = super().evaluate(xs_b)
@@ -380,7 +378,7 @@ class DecisionTree(Task):
             self.target_tensor = torch.randn(self.dt_tensor.shape)
         elif seeds is not None:
             self.dt_tensor = torch.zeros(batch_size, 2**(depth + 1) - 1)
-            self.target_tensor = torch.zeros_like(dt_tensor)
+            self.target_tensor = torch.zeros_like(self.dt_tensor)
             generator = torch.Generator()
             assert len(seeds) == self.b_size
             for i, seed in enumerate(seeds):
