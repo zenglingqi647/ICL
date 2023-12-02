@@ -1,6 +1,6 @@
 inherit: 
-    - models/tiny.yaml
     - base.yaml
+    - models/tiny.yaml
 
 training:
     task: noisy_rbf_logistic_regression
