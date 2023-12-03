@@ -28,13 +28,23 @@ def train_step(model, xs, ys, optimizer, loss_func):
     return loss.detach().item(), output.detach()
 
 
-def train_random_label(model, xs, ys, optimizer, loss_func):
+def train_random_label(model, xs, ys, optimizer, loss_func, random_scheme="normal"):
     """
-    The random label is of mean 0 and std 1.
+    If random_scheme is "normal", then the random labels are sampled from a normal distribution.
+    elif random_scheme is "uniform", then the random labels are sampled from a uniform distribution.
+    else, the random labels are permuted from the original labels.
     """
     optimizer.zero_grad()
     output = model(xs, ys)
-    rand_y = torch.rand_like(ys)
+    
+    if random_scheme == "normal":
+        rand_y = torch.randn_like(ys)
+    elif random_scheme == "uniform":
+        rand_y = torch.rand_like(ys)
+    else:
+        # permute
+        rand_y = ys[torch.randperm(ys.shape[0])]
+        
     loss = loss_func(output, rand_y)
     loss.backward()
     optimizer.step()
