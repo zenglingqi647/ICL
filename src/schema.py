@@ -58,6 +58,7 @@ training_schema = {
     "keep_every_steps": merge(tinteger, default(-1)),  # permanent checkpoints
     "resume_id": merge(tstring, nullable, default(None)),  # run uuid64
     "curriculum": stdict(curriculum_schema),
+    "random_labels": merge(tboolean, default(False)),
 }
 
 wandb_schema = {

@@ -40,7 +40,7 @@
             "justMyCode": true,
             "args": [
                 "--config",
-                "conf/logistic_regression.yaml"
+                "conf/logistic_regression_randomlabel.yaml"
             ],
         },
         {
