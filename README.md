@@ -11,7 +11,16 @@ The conda environment for this project can be installed using the following comm
 conda env create -f environment.yml
 ```
 
+## Code Reading Note
+Curriculum:
+> n_dims start=5, ends=20
+
+Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?
+> if the label really matter. Change the label to random number. From the training code, we change the target but keep the correct ys to see if the claim is true.
+the **point_wise_loss** is not used for gradient update, but for logging. Hence, only the **loss** is modified.
+
 ## Acknowledgements
 The code for this project is based on the following repositories:
 
 https://github.com/dtsip/in-context-learning
+

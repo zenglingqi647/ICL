@@ -28,6 +28,19 @@ def train_step(model, xs, ys, optimizer, loss_func):
     return loss.detach().item(), output.detach()
 
 
+def train_random_label(model, xs, ys, optimizer, loss_func):
+    """
+    The random label is of mean 0 and std 1.
+    """
+    optimizer.zero_grad()
+    output = model(xs, ys)
+    rand_y = torch.rand_like(ys)
+    loss = loss_func(output, rand_y)
+    loss.backward()
+    optimizer.step()
+    return loss.detach().item(), output.detach()
+
+
 def sample_seeds(total_seeds, count):
     seeds = set()
     while len(seeds) < count:
@@ -86,28 +99,25 @@ def train(model, args):
 
         loss_func = task.get_training_metric()
 
-        loss, output = train_step(model, xs.cuda(), ys.cuda(), optimizer, loss_func)
+        if args.training.random_labels:
+            loss, output = train_random_label(model, xs.cuda(), ys.cuda(), optimizer, loss_func)
+        else:
+            loss, output = train_step(model, xs.cuda(), ys.cuda(), optimizer, loss_func)
 
         point_wise_tags = list(range(curriculum.n_points))
         point_wise_loss_func = task.get_metric()
         point_wise_loss = point_wise_loss_func(output, ys.cuda()).mean(dim=0)
 
-        baseline_loss = (
-            sum(
-                max(curriculum.n_dims_truncated - ii, 0)
-                for ii in range(curriculum.n_points)
-            )
-            / curriculum.n_points
-        )
+        baseline_loss = (sum(max(curriculum.n_dims_truncated - ii, 0) for ii in range(curriculum.n_points)) /
+                         curriculum.n_points)
 
         if i % args.wandb.log_every_steps == 0 and not args.test_run:
             wandb.log(
                 {
                     "overall_loss": loss,
                     "excess_loss": loss / baseline_loss,
-                    "pointwise/loss": dict(
-                        zip(point_wise_tags, point_wise_loss.cpu().numpy())
-                    ),
+                    "pointwise/loss": dict(zip(point_wise_tags,
+                                               point_wise_loss.cpu().numpy())),
                     "n_points": curriculum.n_points,
                     "n_dims": curriculum.n_dims_truncated,
                 },
@@ -125,12 +135,8 @@ def train(model, args):
             }
             torch.save(training_state, state_path)
 
-        if (
-            args.training.keep_every_steps > 0
-            and i % args.training.keep_every_steps == 0
-            and not args.test_run
-            and i > 0
-        ):
+        if (args.training.keep_every_steps > 0 and i % args.training.keep_every_steps == 0 and not args.test_run and
+                i > 0):
             torch.save(model.state_dict(), os.path.join(args.out_dir, f"model_{i}.pt"))
 
 
