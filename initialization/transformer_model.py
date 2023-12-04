@@ -98,76 +98,18 @@ class Transformer(nn.Module):
             num_heads: int=1,
             mlp_hidden_dim: int=None,
             is_causal: bool=False,
-            activation: str="relu"
+            activation: str="relu",
+            layer_norm: bool=False,
+            seq_len: int=None
     ):
         super().__init__()
         layers = []
         for _ in range(num_layers):
             layers.append(SelfAttention(input_dim=input_dim, num_heads=num_heads, is_causal=is_causal, activation=activation))
-            layers.append(MLP(input_dim=input_dim, hidden_dim=mlp_hidden_dim))
+            if layer_norm:
+                layers.append(nn.LayerNorm([seq_len, input_dim]))
+            layers.append(MLP(input_dim=input_dim, hidden_dim=mlp_hidden_dim)) # assume v_dim = input_dim
         self.layers = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.layers(x)
-
-        
-
-
-class SelfAttention_Inefficient(nn.Module):
-    """
-    A customized attention layer, following the notation in the paper https://arxiv.org/pdf/2306.04637.pdf#page7
-
-    """
-    default_init_std = 0.1
-    def __init__(
-            self,
-            input_dim: int,
-            qk_dim: int=None,
-            v_dim: int=None,
-            num_heads: int=1,
-            WK_init: torch.Tensor=None,
-            WQ_init: torch.Tensor=None,
-            WV_init: torch.Tensor=None,
-    ):
-        super().__init__()
-        # by default, let qk_dim, v_dim, input_dim all be the same
-        if qk_dim is None:
-            qk_dim = input_dim
-        if v_dim is None:
-            v_dim = input_dim
-        assert qk_dim == v_dim == input_dim, "Right now assume qk_dim = v_dim = input_dim"
-        self.input_dim = input_dim
-        self.qk_dim = qk_dim
-        self.v_dim = v_dim
-        self.num_heads = num_heads
-
-        # initialize the weights
-        WK_init = WK_init.detach() if WK_init is not None else torch.normal(0, self.default_init_std, (self.num_heads, self.input_dim, self.qk_dim))
-        self.WK = nn.Parameter(WK_init, requires_grad=True)
-        assert self.WK.shape == (self.num_heads, self.input_dim, self.qk_dim)
-
-        WQ_init = WQ_init.detach() if WQ_init is not None else torch.normal(0, self.default_init_std, (self.num_heads, self.input_dim, self.qk_dim))
-        self.WQ = nn.Parameter(WQ_init, requires_grad=True)
-        assert self.WQ.shape == (self.num_heads, self.input_dim, self.qk_dim)
-        
-        WV_init = WV_init.detach() if WV_init is not None else torch.normal(0, self.default_init_std, (self.num_heads, self.input_dim, self.v_dim))
-        self.WV = nn.Parameter(WV_init, requires_grad=True)
-        assert self.WV.shape == (self.num_heads, self.input_dim, self.v_dim)
-
-        self.relu = nn.ReLU()
-
-    def normalized_ReLU(self, x):
-        assert x.shape[-1] == self.input_dim
-        N = x.shape[-2]
-        # x.shape = (..., N, self.input_dim)
-        output = self.relu(x) / N
-        return output
-
-    def forward(self, x):
-        # expects x.shape == (..., N, self.input_dim)
-        assert x.shape[-1] == self.input_dim
-        N = x.shape[-2]
-        K = torch.einsum("...nd, mdk -> ...mnk", x, self.WK) # (..., self.num_heads, N, self.qk_dim)
-        Q = torch.einsum("...nd, mdk -> ...mnk", x, self.WQ) # (..., self.num_heads, N, self.qk_dim)
-        V = torch.einsum("...nd, mdk -> ...mnk", x, self.WV) # (..., self.num_heads, N, self.v_dim)
-        torch.einsum("...")
