@@ -100,15 +100,25 @@ class Transformer(nn.Module):
             is_causal: bool=False,
             activation: str="relu",
             layer_norm: bool=False,
-            seq_len: int=None
+            seq_len: int=None,
+            embed_dim: int=None
     ):
         super().__init__()
         layers = []
+        if embed_dim is not None:
+            layers.append(nn.Linear(input_dim, embed_dim))
+            hidden_dim = embed_dim
+        else:
+            hidden_dim = input_dim
+
         for _ in range(num_layers):
-            layers.append(SelfAttention(input_dim=input_dim, num_heads=num_heads, is_causal=is_causal, activation=activation))
+            layers.append(SelfAttention(input_dim=hidden_dim, num_heads=num_heads, is_causal=is_causal, activation=activation))
             if layer_norm:
-                layers.append(nn.LayerNorm([seq_len, input_dim]))
-            layers.append(MLP(input_dim=input_dim, hidden_dim=mlp_hidden_dim)) # assume v_dim = input_dim
+                layers.append(nn.LayerNorm([seq_len, hidden_dim]))
+            layers.append(MLP(input_dim=hidden_dim, hidden_dim=mlp_hidden_dim)) # assume v_dim = input_dim
+        
+        if embed_dim is not None:
+            layers.append(nn.Linear(embed_dim, input_dim))
         self.layers = nn.Sequential(*layers)
 
     def forward(self, x):
