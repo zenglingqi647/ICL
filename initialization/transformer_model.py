@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-
-from typing import Iterable
-
+import numpy as np
 class SelfAttention(nn.Module):
     """
     A customized attention layer, following the notation in the paper https://arxiv.org/pdf/2306.04637.pdf#page7
@@ -14,6 +12,8 @@ class SelfAttention(nn.Module):
             qk_dim: int=None,
             v_dim: int=None,
             num_heads: int=1,
+            is_causal: bool=False,
+            activation: str="relu"
     ):
         super().__init__()
         # by default, let qk_dim, v_dim, input_dim all be the same
@@ -26,7 +26,7 @@ class SelfAttention(nn.Module):
         self.input_dim = input_dim
         self.qk_dim = qk_dim
         self.v_dim = v_dim
-
+        self.is_causal = is_causal
 
         # initialize the weights
         self.K_nets = nn.ModuleList(
@@ -38,8 +38,16 @@ class SelfAttention(nn.Module):
         self.V_nets = nn.ModuleList(
             [nn.Linear(input_dim, v_dim, bias=False) for _ in range(self.num_heads)]
         )
-    
+
         self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=-1)
+        self.activation = activation
+        if activation == "relu":
+            self.mask_value = 0.0
+        elif activation == "softmax":
+            self.mask_value = -float("inf")
+        else:
+            raise Exception
 
     def forward(self, x):
         # expects x.shape == (..., N, self.input_dim)
@@ -49,8 +57,17 @@ class SelfAttention(nn.Module):
         for i in range(self.num_heads):
             K_net, Q_net, V_net = self.K_nets[i], self.Q_nets[i], self.V_nets[i]
             K, Q, V = K_net(x), Q_net(x), V_net(x) # (..., N, self.qk_dim); (..., N, self.v_dim)
-            similarity = torch.einsum("...nd, ...md -> ...nm", Q, K) # (...,, N, N)
-            similarity = self.relu(similarity) / N
+            similarity = torch.einsum("...nd, ...md -> ...nm", Q, K) # (..., N, N)
+            
+            # activation
+            if self.is_causal:
+                masked_idx = ~torch.tril(torch.ones(similarity.shape, dtype=bool))
+                similarity[masked_idx] = self.mask_value
+            if self.activation == "relu":
+                similarity = self.relu(similarity) / N
+            elif self.activation == "softmax":
+                similarity = self.softmax(similarity / np.sqrt(self.qk_dim))
+            
             head_output = torch.einsum("...nm, ...md -> ...nd", similarity, V) # (..., N, self.v_dim)
             output = output + head_output # under the assumption that self.v_dim == self.input_dim
         return output
@@ -80,11 +97,13 @@ class Transformer(nn.Module):
             input_dim: int,
             num_heads: int=1,
             mlp_hidden_dim: int=None,
+            is_causal: bool=False,
+            activation: str="relu"
     ):
         super().__init__()
         layers = []
         for _ in range(num_layers):
-            layers.append(SelfAttention(input_dim=input_dim, num_heads=num_heads))
+            layers.append(SelfAttention(input_dim=input_dim, num_heads=num_heads, is_causal=is_causal, activation=activation))
             layers.append(MLP(input_dim=input_dim, hidden_dim=mlp_hidden_dim))
         self.layers = nn.Sequential(*layers)
 
