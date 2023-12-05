@@ -40,6 +40,19 @@
             "justMyCode": true,
             "args": [
                 "--config",
+                "conf/logistic_regression.yaml"
+            ],
+        },
+        {
+            "name": "Python: logistic_regression random label",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config",
                 "conf/logistic_regression_randomlabel.yaml"
             ],
         },
