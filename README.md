@@ -11,6 +11,38 @@ The conda environment for this project can be installed using the following comm
 conda env create -f environment.yml
 ```
 
+## Run the Code
+Setup:
+```
+cd /folder_path
+conda activate icl
+export CUDA_VISIBLE_DEVICES=Your_GPU_ID
+```
+
+### Basic Experiments
+Vanilla Logistic Regression:
+```
+python train.py --config conf/logistic_regression.yaml
+```
+
+RBF Logistic Regression with Clean Training and Testing Data:
+```
+python train.py --config conf/rbf_logistic_regression.yaml
+```
+
+### Add Noise
+RBF Logistic Regression with Noisy Training and Testing Data:
+```
+TODO
+```
+
+### Scaling
+TODO
+
+### Data Distribution
+TODO
+
+
 ## Code Reading Note
 Curriculum:
 > n_dims start=5, ends=20
