@@ -42,9 +42,10 @@ def train_random_label(model, xs, ys, optimizer, loss_func, random_scheme="norma
         rand_y = torch.randn_like(ys)
     elif random_scheme == "uniform":
         rand_y = torch.rand_like(ys)
-    else:
-        # permute
+    elif random_scheme == "permute":
         rand_y = ys[torch.randperm(ys.shape[0])]
+    else:
+        pass
 
     loss = loss_func(output, rand_y)
     loss.backward()
