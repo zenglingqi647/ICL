@@ -309,11 +309,11 @@ def get_run_metrics(
         save_path = os.path.join(run_path, f"metrics_{step}.json")
 
     recompute = False
-    if save_path is not None and os.path.exists(save_path):
-        checkpoint_created = os.path.getmtime(run_path)
-        cache_created = os.path.getmtime(save_path)
-        if checkpoint_created > cache_created:
-            recompute = True
+    # if save_path is not None and os.path.exists(save_path):
+    #     checkpoint_created = os.path.getmtime(run_path)
+    #     cache_created = os.path.getmtime(save_path)
+    #     if checkpoint_created > cache_created:
+    #         recompute = True
 
     all_metrics = compute_evals(all_models, evaluation_kwargs, save_path, recompute)
     return all_metrics
