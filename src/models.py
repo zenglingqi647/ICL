@@ -10,7 +10,6 @@ from sklearn.linear_model import LogisticRegression, Lasso
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn import tree
-# from sklearn.neighbors import KNeighborsClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.preprocessing import StandardScaler
@@ -20,7 +19,6 @@ from base_models import NeuralNetwork, ParallelNetworks
 
 from tqdm import tqdm
 import torch
-import yaml
 import numpy as np
 
 

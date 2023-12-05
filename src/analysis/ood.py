@@ -1,7 +1,6 @@
-from collections import OrderedDict
 import re
 import os
-
+import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -9,17 +8,14 @@ import torch
 from tqdm import tqdm
 
 from eval import get_run_metrics, read_run_dir, get_model_from_run
-from plot_utils import basic_plot, collect_results, relevant_model_names
-from samplers import get_data_sampler
 from tasks import get_task_sampler
 
 
-def query_scale(model,
-                conf,
-                scales=[0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16],
-                n_points=[10, 20, 40],
+def ood_eval(model,
+                conf,run_path,
+                n_points=range(10, 80, 10),
                 batch_size=64):
-    # results = {n_dims: [] for n_dims in n_dims_ls}
+
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
@@ -28,27 +24,29 @@ def query_scale(model,
     batch_size = conf.training.batch_size
 
     fig, ax = plt.subplots()
+    
     plt.title("Robustness to Query Scales")
     plt.xlabel("scale")
     plt.ylabel("accuracy")
     ax.set_xscale('log')
 
-    for num_ex in n_points:
+    for num_ex in tqdm(n_points):
         results = []
-        for scale in scales:
-            data_sampler = get_data_sampler(conf.training.data, n_dims)
-            task_sampler = get_task_sampler(conf.training.task, n_dims, batch_size, **conf.training.task_kwargs)
-            task = task_sampler()
-            xs = data_sampler.sample_xs(b_size=batch_size, n_points=num_ex)
-            xs = xs * scale
-            ys = task.evaluate(xs)
-            with torch.no_grad():
-                pred = model(xs.to(device), ys.to(device))
-                pred = pred.cpu()
-            metric = task.get_metric()
-            acc = metric(pred, ys).numpy()
-            results.append(acc.mean())
-        plt.plot(scales, results, marker='o', linewidth=2, label=f"{num_ex} examples")
+        
+        task_sampler = get_task_sampler(conf.training.task, n_dims, batch_size, **conf.training.task_kwargs)
+        task = task_sampler()
+        
+        xs = np.load(os.path.join(run_path, 'test_xs.npy'))
+        ys = task.evaluate(xs)
+        
+        with torch.no_grad():
+            pred = model(xs.to(device), ys.to(device))
+            pred = pred.cpu()
+        metric = task.get_metric()
+        acc = metric(pred, ys).numpy()
+        results.append(acc.mean())
+        
+        plt.plot(n_points, results, marker='o', linewidth=2, label=f"{num_ex} examples")
     
     plt.legend()
     plt.savefig("figs/accuracy.png", bbox_inches='tight')
@@ -77,4 +75,4 @@ if __name__ == "__main__":
         get_run_metrics(run_path)  # these are normally precomputed at the end of training
     model, conf = get_model_from_run(run_path)
 
-    query_scale(model, conf)
+    ood_eval(model, conf, run_path)

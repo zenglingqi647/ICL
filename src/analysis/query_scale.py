@@ -38,16 +38,19 @@ def query_scale(model,
         for scale in scales:
             data_sampler = get_data_sampler(conf.training.data, n_dims)
             task_sampler = get_task_sampler(conf.training.task, n_dims, batch_size, **conf.training.task_kwargs)
+            
             task = task_sampler()
             xs = data_sampler.sample_xs(b_size=batch_size, n_points=num_ex)
             xs = xs * scale
             ys = task.evaluate(xs)
+            
             with torch.no_grad():
                 pred = model(xs.to(device), ys.to(device))
                 pred = pred.cpu()
             metric = task.get_metric()
             acc = metric(pred, ys).numpy()
             results.append(acc.mean())
+            
         plt.plot(scales, results, marker='o', linewidth=2, label=f"{num_ex} examples")
     
     plt.legend()

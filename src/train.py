@@ -18,6 +18,13 @@ from eval import gen_standard, gen_opposite_quadrants, gen_random_quadrants, gen
 import wandb
 
 torch.backends.cudnn.benchmark = True
+DATAGEN_DICT = {
+    "standard": gen_standard,
+    "opposite": gen_opposite_quadrants,
+    "random": gen_random_quadrants,
+    "orthogonal": gen_orthogonal_train_test,
+    "overlapping": gen_overlapping_train_test
+}
 
 
 def train_step(model, xs, ys, optimizer, loss_func):
@@ -101,14 +108,7 @@ def train(model, args):
             task_sampler_args["seeds"] = [s + 1 for s in seeds]
 
         # train/test distribution
-        datagen_dict = {
-            "standard": gen_standard,
-            "opposite": gen_opposite_quadrants,
-            "random": gen_random_quadrants,
-            "orthogonal": gen_orthogonal_train_test,
-            "overlapping": gen_overlapping_train_test
-        }
-        xs, test_xs = datagen_dict[args.training.train_test_dist](
+        xs, test_xs = DATAGEN_DICT[args.training.train_test_dist](
             data_sampler,
             curriculum.n_points,
             bsize,
