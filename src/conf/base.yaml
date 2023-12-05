@@ -14,7 +14,7 @@ training:
     save_every_steps: 1000
     keep_every_steps: 100000
     train_steps: 500001
-    random_labels: False
+    random_labels: "None"
     train_test_dist: "standard"
     curriculum:
         dims:

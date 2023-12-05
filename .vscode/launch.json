@@ -44,6 +44,19 @@
             ],
         },
         {
+            "name": "Python: vanilla debug",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config",
+                "conf/vanilla_debug.yaml"
+            ],
+        },
+        {
             "name": "Python: logistic_regression random label",
             "type": "python",
             "request": "launch",
