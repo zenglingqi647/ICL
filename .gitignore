@@ -13,3 +13,4 @@ rbf_classification.zip
 /temp/rbf_classification/
 *wandb.yaml
 *.zip
+temp/
