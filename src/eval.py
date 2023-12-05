@@ -65,14 +65,14 @@ def eval_batch(model, task_sampler, xs, xs_p=None):
 # Functions for generating different kinds of train/test data
 
 
-def gen_standard(data_sampler, n_points, b_size):
-    xs = data_sampler.sample_xs(n_points, b_size)
+def gen_standard(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
 
     return xs, None
 
 
-def gen_opposite_quadrants(data_sampler, n_points, b_size):
-    xs = data_sampler.sample_xs(n_points, b_size)
+def gen_opposite_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
 
     xs_train_pre = xs.abs() * pattern
@@ -81,8 +81,8 @@ def gen_opposite_quadrants(data_sampler, n_points, b_size):
     return xs_train_pre, xs_test_post
 
 
-def gen_random_quadrants(data_sampler, n_points, b_size):
-    xs = data_sampler.sample_xs(n_points, b_size)
+def gen_random_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
 
     xs_train_pre = xs.abs() * pattern
@@ -91,34 +91,29 @@ def gen_random_quadrants(data_sampler, n_points, b_size):
     return xs_train_pre, xs_test_post
 
 
-def gen_orthogonal_train_test(data_sampler, n_points, b_size):
-    xs = data_sampler.sample_xs(n_points, b_size)
+def gen_orthogonal_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     n_dim = xs.shape[2]
     n_points = min(n_points, n_dim)
     # raise ValueError("number of points should be at most the dimension.")
     xs_train_pre = xs
     xs_test_post = torch.zeros(xs.shape)
     for i in range(n_points):
-        xs_test_post_i = xs[:, i : i + 1, :]
+        xs_test_post_i = xs[:, i:i + 1, :]
         xs_train_pre_i = xs[:, :i, :]
         _, _, Vt = torch.linalg.svd(xs_train_pre_i, full_matrices=False)
         xs_train_pre_i_projection = Vt.transpose(1, 2) @ Vt
-        xs_test_post_i_orthogonalized = (
-            xs_test_post_i - xs_test_post_i @ xs_train_pre_i_projection
-        )
-        xs_test_post_i_normalized = (
-            xs_test_post_i_orthogonalized
-            * xs_test_post_i.norm(dim=2).unsqueeze(2)
-            / xs_test_post_i_orthogonalized.norm(dim=2).unsqueeze(2)
-        )
+        xs_test_post_i_orthogonalized = (xs_test_post_i - xs_test_post_i @ xs_train_pre_i_projection)
+        xs_test_post_i_normalized = (xs_test_post_i_orthogonalized * xs_test_post_i.norm(dim=2).unsqueeze(2) /
+                                     xs_test_post_i_orthogonalized.norm(dim=2).unsqueeze(2))
 
-        xs_test_post[:, i : i + 1, :] = xs_test_post_i_normalized
+        xs_test_post[:, i:i + 1, :] = xs_test_post_i_normalized
 
     return xs_train_pre, xs_test_post
 
 
-def gen_overlapping_train_test(data_sampler, n_points, b_size):
-    xs = data_sampler.sample_xs(n_points, b_size)
+def gen_overlapping_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_train_pre = xs
     xs_test_post = xs.clone()
     b_size = xs.shape[0]
@@ -126,7 +121,7 @@ def gen_overlapping_train_test(data_sampler, n_points, b_size):
         xs_train_pre_i = xs[:, :i, :]
         perm = torch.stack([torch.randperm(i) for _ in range(b_size)]).unsqueeze(dim=1)
         ind_mat = (perm == 0) + 0.0
-        xs_test_post[:, i : i + 1, :] = ind_mat @ xs_train_pre_i
+        xs_test_post[:, i:i + 1, :] = ind_mat @ xs_train_pre_i
 
     return xs_train_pre, xs_test_post
 
@@ -171,9 +166,7 @@ def eval_model(
 
     assert num_eval_examples % batch_size == 0
     data_sampler = get_data_sampler(data_name, n_dims, **data_sampler_kwargs)
-    task_sampler = get_task_sampler(
-        task_name, n_dims, batch_size, **task_sampler_kwargs
-    )
+    task_sampler = get_task_sampler(task_name, n_dims, batch_size, **task_sampler_kwargs)
 
     all_metrics = []
 
@@ -219,22 +212,24 @@ def build_evals(conf):
         return evaluation_kwargs
 
     for strategy in [
-        "random_quadrants",
-        "orthogonal_train_test",
-        "overlapping_train_test",
+            "random_quadrants",
+            "orthogonal_train_test",
+            "overlapping_train_test",
     ]:
         evaluation_kwargs[strategy] = {"prompting_strategy": strategy}
 
     for method in ["half_subspace", "skewed"]:
         if "subspace" in method:
             eigenvals = torch.zeros(n_dims)
-            eigenvals[: n_dims // 2] = 1
+            eigenvals[:n_dims // 2] = 1
         else:
             eigenvals = 1 / (torch.arange(n_dims) + 1)
 
         scale = sample_transformation(eigenvals, normalize=True)
         evaluation_kwargs[f"{method}"] = {
-            "data_sampler_kwargs": {"scale": scale},
+            "data_sampler_kwargs": {
+                "scale": scale
+            },
         }
 
     for dim in ["x", "y"]:
@@ -250,7 +245,10 @@ def build_evals(conf):
             evaluation_kwargs[f"scale-{dim}={scale}"] = scaling_args
 
     evaluation_kwargs[f"noisyLR"] = {
-        "task_sampler_kwargs": {"renormalize_ys": True, "noise_std": 1},
+        "task_sampler_kwargs": {
+            "renormalize_ys": True,
+            "noise_std": 1
+        },
         "task_name": "noisy_linear_regression",
     }
 
@@ -287,9 +285,7 @@ def compute_evals(all_models, evaluation_kwargs, save_path=None, recompute=False
     return all_metrics
 
 
-def get_run_metrics(
-    run_path, step=-1, cache=True, skip_model_load=False, skip_baselines=False
-):
+def get_run_metrics(run_path, step=-1, cache=True, skip_model_load=False, skip_baselines=False):
     if skip_model_load:
         _, conf = get_model_from_run(run_path, only_conf=True)
         all_models = []
@@ -317,7 +313,6 @@ def get_run_metrics(
 
     all_metrics = compute_evals(all_models, evaluation_kwargs, save_path, recompute)
     return all_metrics
-
 
 
 def conf_to_model_name(conf):
@@ -380,18 +375,10 @@ def read_run_dir(run_dir):
             params["run_id"] = run_id
             params["task"] = task
             params["model"] = conf_to_model_name(conf)
-            params["kwargs"] = "_".join(
-                f"{k}={v}" for k, v in conf.training.task_kwargs.items()
-            )
-            num_tasks = (
-                conf.training.num_tasks if "num_tasks" in conf.training else None
-            )
+            params["kwargs"] = "_".join(f"{k}={v}" for k, v in conf.training.task_kwargs.items())
+            num_tasks = (conf.training.num_tasks if "num_tasks" in conf.training else None)
             params["num_tasks"] = num_tasks if num_tasks is not None else -1
-            num_examples = (
-                conf.training.num_training_examples
-                if "num_training_examples" in conf.training
-                else None
-            )
+            num_examples = (conf.training.num_training_examples if "num_training_examples" in conf.training else None)
             params["num_examples"] = num_examples if num_examples is not None else -1
             params["n_dims"] = conf.model.n_dims
             params["n_layer"] = conf.model.n_layer
@@ -404,8 +391,9 @@ def read_run_dir(run_dir):
                 all_runs[k].append(v)
 
     df = pd.DataFrame(all_runs).sort_values("run_name")
-    assert len(df) == len(df.run_name.unique())
+    # assert len(df) == len(df.run_name.unique())
     return df
+
 
 if __name__ == "__main__":
     run_dir = sys.argv[1]

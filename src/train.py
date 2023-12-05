@@ -6,13 +6,14 @@ from quinine import QuinineArgumentParser
 from tqdm import tqdm
 import torch
 import yaml
-
+import numpy as np
 from eval import get_run_metrics
 from tasks import get_task_sampler
 from samplers import get_data_sampler
 from curriculum import Curriculum
 from schema import schema
 from models import build_model
+from eval import gen_standard, gen_opposite_quadrants, gen_random_quadrants, gen_overlapping_train_test, gen_orthogonal_train_test
 
 import wandb
 
@@ -36,7 +37,7 @@ def train_random_label(model, xs, ys, optimizer, loss_func, random_scheme="norma
     """
     optimizer.zero_grad()
     output = model(xs, ys)
-    
+
     if random_scheme == "normal":
         rand_y = torch.randn_like(ys)
     elif random_scheme == "uniform":
@@ -44,7 +45,7 @@ def train_random_label(model, xs, ys, optimizer, loss_func, random_scheme="norma
     else:
         # permute
         rand_y = ys[torch.randperm(ys.shape[0])]
-        
+
     loss = loss_func(output, rand_y)
     loss.backward()
     optimizer.step()
@@ -98,12 +99,22 @@ def train(model, args):
             data_sampler_args["seeds"] = seeds
             task_sampler_args["seeds"] = [s + 1 for s in seeds]
 
-        xs = data_sampler.sample_xs(
+        # train/test distribution
+        datagen_dict = {
+            "standard": gen_standard,
+            "opposite": gen_opposite_quadrants,
+            "random": gen_random_quadrants,
+            "orthogonal": gen_orthogonal_train_test,
+            "overlapping": gen_overlapping_train_test
+        }
+        xs, test_xs = datagen_dict[args.training.train_test_dist](
+            data_sampler,
             curriculum.n_points,
             bsize,
             curriculum.n_dims_truncated,
             **data_sampler_args,
         )
+
         task = task_sampler(**task_sampler_args)
         ys = task.evaluate(xs)
 
@@ -148,6 +159,9 @@ def train(model, args):
         if (args.training.keep_every_steps > 0 and i % args.training.keep_every_steps == 0 and not args.test_run and
                 i > 0):
             torch.save(model.state_dict(), os.path.join(args.out_dir, f"model_{i}.pt"))
+
+    np.save(os.path.join(args.out_dir, 'test_xs.npy'), test_xs.cpu().numpy())
+    np.save(os.path.join(args.out_dir, 'train_xs.npy'), xs.cpu().numpy())
 
 
 def main(args):
