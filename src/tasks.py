@@ -56,9 +56,8 @@ def get_task_sampler(task_name, n_dims, batch_size, pool_dict=None, num_tasks=No
         "sparse_linear_regression": SparseLinearRegression,
         # logistic regression with extended experiments
         "logistic_regression": LogisticRegression,
-        "logistic_regression_ood": LogisticRegression,
-        "logistic_regression_randlb": LogisticRegression,
         "noisy_logistic_regression" : NoisyLogisticRegression,
+        # logistic regression with extended experiments
         "rbf_logistic_regression": RBFLogisticRegression,
         "noisy_rbf_logistic_regression": NoisyRBFLogisticRegression,
         "noisy_linear_regression": NoisyLinearRegression,

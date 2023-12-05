@@ -1,8 +1,6 @@
-import re
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 import seaborn as sns
 import torch
 from tqdm import tqdm
@@ -49,7 +47,7 @@ def ood_eval(model,
         plt.plot(n_points, results, marker='o', linewidth=2, label=f"{num_ex} examples")
     
     plt.legend()
-    plt.savefig("figs/accuracy.png", bbox_inches='tight')
+    plt.savefig("figs/ood_accuracy.png", bbox_inches='tight')
 
     # Plotting
     # for n_dims, losses in results.items():
@@ -65,7 +63,7 @@ if __name__ == "__main__":
     run_dir = "/data1/lzengaf/cs182/ICL/models"
 
     df = read_run_dir(run_dir)
-    task = "rbf_logistic_regression"
+    task = "logistic_regression"
     run_id = "trained_partial"  # if you train more models, replace with the run_id from the table above
 
     run_path = os.path.join(run_dir, task, run_id)
