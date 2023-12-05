@@ -31,9 +31,21 @@ python train.py --config conf/rbf_logistic_regression.yaml
 ```
 
 ### Add Noise
-RBF Logistic Regression with Noisy Training and Testing Data:
+Vanilla and RBF Logistic Regression with Noisy Training and Testing Data:
 ```
-TODO
+python train.py --config conf/lr_noise0.2.yaml
+python train.py --config conf/rbf_lr_noise0.2.yaml
+```
+We also experimented noise probabilities of 0.05 and 0.1, which could be run by replacing the 0.2 with 0.05 and 0.1
+
+### Varying problem dimensions
+```
+python train.py --config conf/rbf_lr_noise0.1_dim[10/30/40].yaml
+```
+
+### Varying model capacity
+```
+python train.py --config conf/rbf_lr_[small/tiny]_noise0.1.yaml
 ```
 
 ### Scaling

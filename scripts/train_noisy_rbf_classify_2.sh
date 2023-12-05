@@ -28,6 +28,7 @@
 #SBATCH --time=24:00:00
 
 ## Command(s) to run:
+cd ../src
 python train.py --config conf/lr_noise0.05.yaml &
 sleep 2
 python train.py --config conf/lr_noise0.1.yaml &

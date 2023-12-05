@@ -29,6 +29,7 @@
 
 ## Command(s) to run:
 # This script trains the Transformers with different capacities.
+cd ../src
 python train.py --config conf/rbf_lr_small_noise0.1.yaml &
 sleep 2
 python train.py --config conf/rbf_lr_tiny_noise0.1.yaml &
