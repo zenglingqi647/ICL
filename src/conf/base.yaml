@@ -15,7 +15,7 @@ training:
     keep_every_steps: 100000
     train_steps: 500001
     random_labels: False
-    train_text_dist: "standard"
+    train_test_dist: "standard"
     curriculum:
         dims:
             start: 5
