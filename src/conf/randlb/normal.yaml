@@ -2,7 +2,7 @@ inherit:
     - base.yaml
 
 training:
-    task: logistic_regression_randlb
+    task: logistic_regression
     curriculum:
         points:
             start: 11
@@ -12,7 +12,7 @@ training:
     train_steps: 32001
     random_labels: normal
 
-out_dir: ../models/logistic_regression
+out_dir: ../models/logistic_regression_randlb
 
 wandb:
     name: "logistic_regression_normal"

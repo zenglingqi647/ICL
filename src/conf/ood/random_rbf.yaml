@@ -2,7 +2,7 @@ inherit:
     - base.yaml
 
 training:
-    task: logistic_regression_randlb
+    task: rbf_logistic_regression
     curriculum:
         points:
             start: 11
@@ -10,9 +10,9 @@ training:
             inc: 2
             interval: 2000
     train_steps: 32001
-    random_labels: uniform
+    train_test_dist: random
 
-out_dir: ../models/logistic_regression
+out_dir: ../models/rbf_logistic_regression_ood
 
 wandb:
-    name: "logistic_regression_uniform"
+    name: "rbf_logistic_regression_random"
