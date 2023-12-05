@@ -9,10 +9,10 @@ training:
             end: 41
             inc: 2
             interval: 2000
-    train_steps: 101
-    train_test_dist: "opposite"
+    train_steps: 32001
+    train_test_dist: overlapping
 
 out_dir: ../models/logistic_regression
 
 wandb:
-    name: "logistic_regression_standard"
+    name: "logistic_regression_overlapping"
