@@ -161,7 +161,10 @@ def train(model, args):
                 i > 0):
             torch.save(model.state_dict(), os.path.join(args.out_dir, f"model_{i}.pt"))
 
-    np.save(os.path.join(args.out_dir, 'test_xs.npy'), test_xs.cpu().numpy())
+    if test_xs is not None:
+        np.save(os.path.join(args.out_dir, 'test_xs.npy'), test_xs.cpu().numpy())
+    else:
+        np.save(os.path.join(args.out_dir, 'test_xs.npy'), xs.cpu().numpy())
     np.save(os.path.join(args.out_dir, 'train_xs.npy'), xs.cpu().numpy())
 
 

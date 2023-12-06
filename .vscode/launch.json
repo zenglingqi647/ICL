@@ -28,7 +28,7 @@
             "justMyCode": true,
             "args": [
                 "--config",
-                "conf/noisy_rbf_logistic_regression.yaml"
+                "/data1/lzengaf/cs182/ICL/src/conf/rbf_lr_noise0.1_dim10.yaml"
             ],
         },
         {
