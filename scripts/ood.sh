@@ -17,5 +17,6 @@ python train.py --config conf/ood/random_rbf.yaml
 python train.py --config conf/ood/orthogonal_rbf.yaml
 python train.py --config conf/ood/overlapping_rbf.yaml
 
+# eval
 export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
 python /data1/lzengaf/cs182/ICL/src/analysis/ood.py

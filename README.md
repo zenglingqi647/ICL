@@ -14,7 +14,7 @@ conda env create -f environment.yml
 ## Run the Code
 Setup:
 ```
-cd /folder_path
+cd /Your_src_folder_path
 conda activate icl
 export CUDA_VISIBLE_DEVICES=Your_GPU_ID
 ```
@@ -49,11 +49,54 @@ python train.py --config conf/rbf_lr_[small/tiny]_noise0.1.yaml
 ```
 
 ### Scaling
-TODO
+Modify the **task** and **run_id** in /ICL/src/analysis/query_scale.py, and run
+```
+python /ICL/src/analysis/query_scale.py
+```
 
 ### Data Distribution
-TODO
+Train:
+```
+# logistic regression
+python train.py --config conf/ood/standard.yaml
+python train.py --config conf/ood/opposite.yaml
+python train.py --config conf/ood/random.yaml
+python train.py --config conf/ood/orthogonal.yaml
+python train.py --config conf/ood/overlapping.yaml
 
+# rbf logistic regression
+python train.py --config conf/ood/standard_rbf.yaml
+python train.py --config conf/ood/opposite_rbf.yaml
+python train.py --config conf/ood/random_rbf.yaml
+python train.py --config conf/ood/orthogonal_rbf.yaml
+python train.py --config conf/ood/overlapping_rbf.yaml
+```
+Evaluate and plot:
+```
+export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
+python /data1/lzengaf/cs182/ICL/src/analysis/ood.py
+```
+
+### Random label
+Train:
+```
+# logistic regression
+python train.py --config conf/randlb/None.yaml
+python train.py --config conf/randlb/normal.yaml
+python train.py --config conf/randlb/permute.yaml
+python train.py --config conf/randlb/uniform.yaml
+
+# rbf logistic regression
+python train.py --config conf/randlb/None_rbf.yaml
+python train.py --config conf/randlb/normal_rbf.yaml
+python train.py --config conf/randlb/permute_rbf.yaml
+python train.py --config conf/randlb/uniform_rbf.yaml
+```
+Evaluate and plot:
+```
+export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
+python /data1/lzengaf/cs182/ICL/src/analysis/randlb.py
+```
 
 ## Code Reading Note
 Curriculum:
