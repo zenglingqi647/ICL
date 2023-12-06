@@ -1,0 +1,24 @@
+inherit: 
+    - base.yaml
+
+model:
+    n_dims: 2
+
+training:
+    task: noisy_rbf_logistic_regression
+    task_kwargs: {"train_noise_prob": 0.1}
+    curriculum:
+        points:
+            start: 11
+            end: 41
+            inc: 2
+            interval: 200
+        dims:
+            start: 2
+            end: 2
+    train_steps: 10001
+
+out_dir: ../models/rbf_lr_dim2_noise0.1
+
+wandb:
+    name: "rbf_lr_dim2_noise0.1"

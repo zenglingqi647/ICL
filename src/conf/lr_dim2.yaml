@@ -1,0 +1,23 @@
+inherit: 
+    - base.yaml
+
+model:
+    n_dims: 2
+
+training:
+    task: logistic_regression
+    curriculum:
+        points:
+            start: 11
+            end: 41
+            inc: 2
+            interval: 200
+        dims:
+            start: 2
+            end: 2
+    train_steps: 10001
+
+out_dir: ../models/lr_dim2
+
+wandb:
+    name: "lr_dim2"
