@@ -199,6 +199,9 @@ def build_evals(conf):
         "prompting_strategy": "standard",
     }
 
+    if len(conf.training.task_kwargs) > 0:
+        base_kwargs["task_sampler_kwargs"] = conf.training.task_kwargs
+
     evaluation_kwargs = {}
 
     evaluation_kwargs["standard"] = {"prompting_strategy": "standard"}
@@ -285,7 +288,7 @@ def compute_evals(all_models, evaluation_kwargs, save_path=None, recompute=False
     return all_metrics
 
 
-def get_run_metrics(run_path, step=-1, cache=True, skip_model_load=False, skip_baselines=False):
+def get_run_metrics(run_path, step=-1, cache=True, skip_model_load=False, skip_baselines=False, recompute=False):
     if skip_model_load:
         _, conf = get_model_from_run(run_path, only_conf=True)
         all_models = []
@@ -304,7 +307,7 @@ def get_run_metrics(run_path, step=-1, cache=True, skip_model_load=False, skip_b
     else:
         save_path = os.path.join(run_path, f"metrics_{step}.json")
 
-    recompute = False
+    # recompute = False
     # if save_path is not None and os.path.exists(save_path):
     #     checkpoint_created = os.path.getmtime(run_path)
     #     cache_created = os.path.getmtime(save_path)
