@@ -108,7 +108,7 @@ def collect_results(run_dir, df, valid_row=None, rename_eval=None, rename_model=
                 m_processed = {}
                 n_dims = conf.model.n_dims
 
-                xlim = 2 * n_dims + 1
+                xlim = 200
                 if r.task in ["relu_2nn_regression", "decision_tree"]:
                     xlim = 200
 
