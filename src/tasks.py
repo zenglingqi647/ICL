@@ -217,13 +217,15 @@ class NoisyLogisticRegression(LogisticRegression):
 
 class RBFLogisticRegression(LogisticRegression):
 
-    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
+    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1, same_centers=True):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        self.center = torch.randn(n_dims)
+        if same_centers:
+            self.center = torch.randn(size=(1, 1, n_dims))
+        else:
+            self.center = torch.randn(size=(self.b_size, 1, n_dims))
 
     def evaluate(self, xs_b):
-        broadcast_center = self.center.reshape(1, 1, self.center.shape[0])
-        dist = (torch.cdist(xs_b, broadcast_center).squeeze(-1))
+        dist = (torch.cdist(xs_b, self.center).squeeze(-1))
         medians, _ = torch.median(dist, dim=1, keepdim=True)
         medians += 1e-6
         return (dist - medians).sign()
@@ -246,7 +248,6 @@ class NoisyRBFLogisticRegression(RBFLogisticRegression):
                  test_noise_prob=0,
                  if_test=False):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        self.center = torch.randn(n_dims)
         self.train_noise_prob = train_noise_prob
         self.test_noise_prob = test_noise_prob
         self.if_test = if_test
