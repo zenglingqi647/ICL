@@ -91,8 +91,8 @@ def randlb_yaml():
     if not os.path.exists("/data1/lzengaf/cs182/ICL/src/conf/randlb"):
         os.mkdir("/data1/lzengaf/cs182/ICL/src/conf/randlb")
 
-    if not os.path.exists("/data1/lzengaf/cs182/ICL/src/conf/ood/base.yaml"):
-        file_path = "/data1/lzengaf/cs182/ICL/src/conf/ood/base.yaml"
+    if not os.path.exists("/data1/lzengaf/cs182/ICL/src/conf/randlb/base.yaml"):
+        file_path = "/data1/lzengaf/cs182/ICL/src/conf/randlb/base.yaml"
         with open(file_path, 'w') as file:
             file.write("inherit: \n"
                        "    - ../models/standard.yaml\n"
@@ -153,7 +153,7 @@ def randlb_rbf_yaml():
             file.write("inherit: \n"
                        "    - base.yaml\n\n"
                        "training:\n"
-                       "    task: logistic_regression\n"
+                       "    task: rbf_logistic_regression\n"
                        "    curriculum:\n"
                        "        points:\n"
                        "            start: 11\n"
@@ -170,7 +170,7 @@ def randlb_rbf_yaml():
 
 
 if __name__ == "__main__":
-    ood_yaml()
-    ood_rbf_yaml()
+    # ood_yaml()
+    # ood_rbf_yaml()
     randlb_yaml()
     randlb_rbf_yaml()

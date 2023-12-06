@@ -2,7 +2,7 @@ inherit:
     - base.yaml
 
 training:
-    task: logistic_regression
+    task: rbf_logistic_regression
     curriculum:
         points:
             start: 11
