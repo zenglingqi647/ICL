@@ -18,6 +18,7 @@ def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64):
     n_dims = conf.model.n_dims
     batch_size = conf.training.batch_size
 
+    _ = plt.subplots()
     plt.title(conf.training.train_test_dist)
     plt.xlabel("n_points")
     plt.ylabel("accuracy")
@@ -30,13 +31,11 @@ def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64):
         
         xs_path = os.path.join(run_path, 'test_xs.npy')
         if not os.path.exists(xs_path):
-            if 'standard' not in conf.training.task:
-                raise ValueError('Missing test_xs.npy for OOD task!')
             data_sampler = get_data_sampler(conf.training.data, n_dims)
             xs = data_sampler.sample_xs(b_size=batch_size, n_points=num_ex)
-            
-        xs = np.load(os.path.join(run_path, 'test_xs.npy'))
-        xs = torch.from_numpy(xs[:, :num_ex, :])
+        else:
+            xs = np.load(xs_path)
+            xs = torch.from_numpy(xs[:, :num_ex, :])
         ys = task.evaluate(xs)
 
         with torch.no_grad():
@@ -60,9 +59,9 @@ if __name__ == "__main__":
 
     assert 'ood' in task, 'Please specify an OOD task!'
 
-    df = read_run_dir(os.path.join(run_dir, task))
+    df = read_run_dir(run_dir)
 
-    for run_id in tqdm(os.path.join(run_dir, task)):
+    for run_id in tqdm(os.listdir(os.path.join(run_dir, task)), desc='run'):
         if not os.path.isdir(os.path.join(run_dir, task, run_id)):
             continue
         
