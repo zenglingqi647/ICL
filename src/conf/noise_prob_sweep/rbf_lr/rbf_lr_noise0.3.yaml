@@ -1,9 +1,9 @@
 inherit: 
-    - base.yaml
+    - ../../base.yaml
 
 training:
     task: noisy_rbf_logistic_regression
-    task_kwargs: {"train_noise_prob": 0.35}
+    task_kwargs: {"train_noise_prob": 0.3}
     curriculum:
         points:
             start: 11
@@ -12,7 +12,7 @@ training:
             interval: 2000
     train_steps: 32001
 
-out_dir: ../models/rbf_lr_noise0.35
+out_dir: ../../../models/rbf_lr_noise0.3
 
 wandb:
-    name: "rbf_lr_noise0.35"
+    name: "rbf_lr_noise0.3"

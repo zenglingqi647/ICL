@@ -29,13 +29,13 @@
 
 ## Command(s) to run:
 cd ../src
-python train.py --config conf/rbf_lr_noise0.25.yaml &
+python train.py --config conf/noise_prob_sweep/rbf_lr/rbf_lr_noise0.25.yaml &
 sleep 2
-python train.py --config conf/rbf_lr_noise0.3.yaml &
+python train.py --config conf/noise_prob_sweep/rbf_lr/rbf_lr_noise0.3.yaml &
 sleep 2
-python train.py --config conf/rbf_lr_noise0.35.yaml &
+python train.py --config conf/noise_prob_sweep/rbf_lr/rbf_lr_noise0.35.yaml &
 sleep 2
-python train.py --config conf/rbf_lr_noise0.4.yaml &
+python train.py --config conf/noise_prob_sweep/rbf_lr/rbf_lr_noise0.4.yaml &
 sleep 2
 wait
 

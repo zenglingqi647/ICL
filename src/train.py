@@ -121,8 +121,8 @@ def train(model, args):
 
         loss_func = task.get_training_metric()
 
-        if args.training.random_labels:
-            loss, output = train_random_label(model, xs.cuda(), ys.cuda(), optimizer, loss_func)
+        if args.training.random_labels != "None":
+            loss, output = train_random_label(model, xs.cuda(), ys.cuda(), optimizer, loss_func, random_scheme=args.training.random_labels)
         else:
             loss, output = train_step(model, xs.cuda(), ys.cuda(), optimizer, loss_func)
 
