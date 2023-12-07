@@ -1,5 +1,6 @@
 tmux
 tmux attach -t 
+tmux kill-session
 
 cd /data1/lzengaf/cs182/ICL/src
 conda activate in-context-learning

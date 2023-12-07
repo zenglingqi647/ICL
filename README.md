@@ -56,6 +56,7 @@ python /ICL/src/analysis/query_scale.py
 
 ### Data Distribution
 Train:
+The working directory should be **Your_path/ICL/src**
 ```
 # logistic regression
 python train.py --config conf/ood/standard.yaml
@@ -72,6 +73,7 @@ python train.py --config conf/ood/orthogonal_rbf.yaml
 python train.py --config conf/ood/overlapping_rbf.yaml
 ```
 Evaluate and plot:
+The working directory should be **Your_path/ICL/**
 ```
 export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
 python /data1/lzengaf/cs182/ICL/src/analysis/ood.py
@@ -79,6 +81,7 @@ python /data1/lzengaf/cs182/ICL/src/analysis/ood.py
 
 ### Random label
 Train:
+The working directory should be **Your_path/ICL/src/**
 ```
 # logistic regression
 python train.py --config conf/randlb/None.yaml
@@ -93,6 +96,7 @@ python train.py --config conf/randlb/permute_rbf.yaml
 python train.py --config conf/randlb/uniform_rbf.yaml
 ```
 Evaluate and plot:
+The working directory should be **Your_path/ICL/**
 ```
 export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
 python /data1/lzengaf/cs182/ICL/src/analysis/randlb.py
