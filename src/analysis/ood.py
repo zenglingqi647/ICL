@@ -9,7 +9,14 @@ from eval import get_run_metrics, read_run_dir, get_model_from_run
 from tasks import get_task_sampler
 from samplers import get_data_sampler
 
-def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64):
+palette = sns.color_palette('colorblind')
+PLT_COLOR = [
+    palette[0], palette[1], palette[2], palette[3], palette[4], palette[5], palette[6], palette[7], palette[8],
+    palette[9]
+]
+
+
+def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64, color=None):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
@@ -18,7 +25,7 @@ def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64):
     n_dims = conf.model.n_dims
     batch_size = conf.training.batch_size
 
-    _ = plt.subplots()
+    # _ = plt.subplots()
     plt.title(conf.training.train_test_dist)
     plt.xlabel("n_points")
     plt.ylabel("accuracy")
@@ -28,7 +35,7 @@ def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64):
 
         task_sampler = get_task_sampler(conf.training.task, n_dims, batch_size, **conf.training.task_kwargs)
         task = task_sampler()
-        
+
         xs_path = os.path.join(run_path, 'test_xs.npy')
         if not os.path.exists(xs_path):
             data_sampler = get_data_sampler(conf.training.data, n_dims)
@@ -45,9 +52,8 @@ def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64):
         acc = metric(pred, ys).numpy()
         results.append(acc.mean())
 
-    plt.plot(list(n_points), results, marker='o', linewidth=2, label="Accuracy")
+    plt.plot(list(n_points), results, marker='o', linewidth=2, label=conf.training.train_test_dist, color=color)
     plt.legend()
-    plt.savefig(f"figs/{conf.training.task}_{conf.training.train_test_dist}.png", bbox_inches='tight')
 
 
 if __name__ == "__main__":
@@ -61,10 +67,11 @@ if __name__ == "__main__":
 
     df = read_run_dir(run_dir)
 
+    i = 0
     for run_id in tqdm(os.listdir(os.path.join(run_dir, task)), desc='run'):
         if not os.path.isdir(os.path.join(run_dir, task, run_id)):
             continue
-        
+
         run_path = os.path.join(run_dir, task, run_id)
         recompute_metrics = False
 
@@ -72,4 +79,7 @@ if __name__ == "__main__":
             get_run_metrics(run_path)  # these are normally precomputed at the end of training
         model, conf = get_model_from_run(run_path)
 
-        ood_eval(model, conf, run_path)
+        ood_eval(model, conf, run_path, color=PLT_COLOR[i])
+        i += 1
+
+    plt.savefig(f"figs/{conf.training.task}.png", bbox_inches='tight')
