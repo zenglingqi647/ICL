@@ -17,7 +17,8 @@ PLT_COLOR = [
 
 
 def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64, color=None, title=None):
-
+    if conf.training.train_test_dist == 'orthogonal':
+        return
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
@@ -78,6 +79,8 @@ if __name__ == "__main__":
         if recompute_metrics:
             get_run_metrics(run_path)  # these are normally precomputed at the end of training
         model, conf = get_model_from_run(run_path)
+        if conf.training.train_test_dist == 'orthogonal':
+            continue
 
         ood_eval(model, conf, run_path, color=PLT_COLOR[i], title=task)
         i += 1

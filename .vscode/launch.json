@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
     
 
         {
@@ -85,14 +86,14 @@
             "justMyCode": true,
         },
         {
-            "name": "Python: randlb eval",
+            "name": "Python: ood eval",
             "type": "python",
             "request": "launch",
             // "cwd": "${workspaceFolder}/src",
             "env": {
                 "PYTHONPATH": "/data1/lzengaf/cs182/ICL/src"
             },
-            "program": "/data1/lzengaf/cs182/ICL/src/analysis/randlb.py",
+            "program": "/data1/lzengaf/cs182/ICL/src/analysis/ood.py",
             "console": "integratedTerminal",
             "justMyCode": true,
         },
