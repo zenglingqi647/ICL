@@ -16,7 +16,7 @@ PLT_COLOR = [
 ]
 
 
-def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64, color=None):
+def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64, color=None, title=None):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
@@ -26,7 +26,7 @@ def ood_eval(model, conf, run_path, n_points=range(10, 90, 10), batch_size=64, c
     batch_size = conf.training.batch_size
 
     # _ = plt.subplots()
-    plt.title(conf.training.train_test_dist)
+    plt.title(title)
     plt.xlabel("n_points")
     plt.ylabel("accuracy")
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             get_run_metrics(run_path)  # these are normally precomputed at the end of training
         model, conf = get_model_from_run(run_path)
 
-        ood_eval(model, conf, run_path, color=PLT_COLOR[i])
+        ood_eval(model, conf, run_path, color=PLT_COLOR[i], title=task)
         i += 1
 
-    plt.savefig(f"figs/{conf.training.task}.png", bbox_inches='tight')
+    plt.savefig(f"figs/ood_{conf.training.task}.png", bbox_inches='tight')

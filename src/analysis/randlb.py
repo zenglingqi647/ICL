@@ -15,7 +15,7 @@ PLT_COLOR = [
 ]
 
 
-def randlb_eval(model, conf, n_points=range(10, 90, 10), batch_size=64, color=None):
+def randlb_eval(model, conf, n_points=range(10, 90, 10), batch_size=64, color=None, title=None):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
@@ -25,7 +25,7 @@ def randlb_eval(model, conf, n_points=range(10, 90, 10), batch_size=64, color=No
     batch_size = conf.training.batch_size
 
     # _ = plt.subplots()
-    plt.title(conf.training.train_test_dist)
+    plt.title(title)
     plt.xlabel("n_points")
     plt.ylabel("accuracy")
 
@@ -54,7 +54,7 @@ def randlb_eval(model, conf, n_points=range(10, 90, 10), batch_size=64, color=No
 if __name__ == "__main__":
     sns.set_theme('notebook', 'darkgrid')
     run_dir = "/data1/lzengaf/cs182/ICL/models/"
-    task = 'logistic_regression_randlb'
+    task = 'rbf_logistic_regression_randlb'
 
     assert 'randlb' in task, 'Please specify an randlb task!'
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             get_run_metrics(run_path)  # these are normally precomputed at the end of training
         model, conf = get_model_from_run(run_path)
 
-        randlb_eval(model, conf, color=PLT_COLOR[i])
+        randlb_eval(model, conf, color=PLT_COLOR[i], title=task)
         i += 1
 
     plt.savefig(f"figs/randlb_{conf.training.task}.png", bbox_inches='tight')
