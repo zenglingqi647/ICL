@@ -2,7 +2,7 @@ import os
 
 
 def ood_yaml():
-    modes = ["standard", "opposite", "random", "orthogonal", "overlapping"]
+    modes = ["standard", "opposite", "random", "orthogonal", "proj"]
 
     if not os.path.exists("/data1/lzengaf/cs182/ICL/src/conf/ood"):
         os.mkdir("/data1/lzengaf/cs182/ICL/src/conf/ood")
@@ -58,7 +58,7 @@ def ood_yaml():
 
 
 def ood_rbf_yaml():
-    modes = ["standard", "opposite", "random", "orthogonal", "overlapping"]
+    modes = ["standard", "opposite", "random", "orthogonal", "proj"]
 
     if not os.path.exists("/data1/lzengaf/cs182/ICL/src/conf/ood"):
         os.mkdir("/data1/lzengaf/cs182/ICL/src/conf/ood")

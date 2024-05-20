@@ -2,7 +2,7 @@ inherit:
     - base.yaml
 
 training:
-    task: rbf_logistic_regression
+    task: logistic_regression
     curriculum:
         points:
             start: 11
@@ -10,9 +10,9 @@ training:
             inc: 2
             interval: 2000
     train_steps: 32001
-    train_test_dist: overlapping
+    train_test_dist: proj
 
-out_dir: ../models/rbf_logistic_regression_ood
+out_dir: ../models/logistic_regression_ood
 
 wandb:
-    name: "rbf_logistic_regression_overlapping"
+    name: "logistic_regression_proj"

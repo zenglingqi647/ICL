@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from munch import Munch
+from omegaconf import OmegaConf
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -17,7 +17,7 @@ from tasks import get_task_sampler
 def get_model_from_run(run_path, step=-1, only_conf=False):
     config_path = os.path.join(run_path, "config.yaml")
     with open(config_path) as fp:  # we don't Quinfig it to avoid inherits
-        conf = Munch.fromDict(yaml.safe_load(fp))
+        conf = OmegaConf.load(fp)
     if only_conf:
         return None, conf
 
@@ -36,7 +36,6 @@ def get_model_from_run(run_path, step=-1, only_conf=False):
 
 
 # Functions for evaluation
-
 
 def eval_batch(model, task_sampler, xs, xs_p=None):
     task = task_sampler()
@@ -64,10 +63,8 @@ def eval_batch(model, task_sampler, xs, xs_p=None):
 
 # Functions for generating different kinds of train/test data
 
-
 def gen_standard(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-
     return xs, None
 
 
@@ -75,20 +72,20 @@ def gen_opposite_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
 
-    xs_train_pre = xs.abs() * pattern
-    xs_test_post = -xs_train_pre
+    xs_train = xs.abs() * pattern
+    xs_test = -xs_train
 
-    return xs_train_pre, xs_test_post
+    return xs_train, xs_test
 
 
 def gen_random_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
 
-    xs_train_pre = xs.abs() * pattern
-    xs_test_post = xs
+    xs_train = xs.abs() * pattern
+    xs_test = xs
 
-    return xs_train_pre, xs_test_post
+    return xs_train, xs_test
 
 
 def gen_orthogonal_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
@@ -96,40 +93,40 @@ def gen_orthogonal_train_test(data_sampler, n_points, b_size, n_dims_truncated=N
     n_dim = xs.shape[2]
     n_points = min(n_points, n_dim)
     # raise ValueError("number of points should be at most the dimension.")
-    xs_train_pre = xs
-    xs_test_post = torch.zeros(xs.shape)
+    xs_train = xs
+    xs_test = torch.zeros(xs.shape)
     for i in range(n_points):
-        xs_test_post_i = xs[:, i:i + 1, :]
-        xs_train_pre_i = xs[:, :i, :]
-        _, _, Vt = torch.linalg.svd(xs_train_pre_i, full_matrices=False)
-        xs_train_pre_i_projection = Vt.transpose(1, 2) @ Vt
-        xs_test_post_i_orthogonalized = (xs_test_post_i - xs_test_post_i @ xs_train_pre_i_projection)
-        xs_test_post_i_normalized = (xs_test_post_i_orthogonalized * xs_test_post_i.norm(dim=2).unsqueeze(2) /
-                                     xs_test_post_i_orthogonalized.norm(dim=2).unsqueeze(2))
+        xs_test_i = xs[:, i:i + 1, :]
+        xs_train_i = xs[:, :i, :]
+        _, _, Vt = torch.linalg.svd(xs_train_i, full_matrices=False)
+        xs_train_i_projection = Vt.transpose(1, 2) @ Vt
+        xs_test_i_orthogonalized = (xs_test_i - xs_test_i @ xs_train_i_projection)
+        xs_test_i_normalized = (xs_test_i_orthogonalized * xs_test_i.norm(dim=2).unsqueeze(2) /
+                                     xs_test_i_orthogonalized.norm(dim=2).unsqueeze(2))
 
-        xs_test_post[:, i:i + 1, :] = xs_test_post_i_normalized
+        xs_test[:, i:i + 1, :] = xs_test_i_normalized
 
-    return xs_train_pre, xs_test_post
+    return xs_train, xs_test
 
 
-def gen_overlapping_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+def gen_proj_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    xs_train_pre = xs
-    xs_test_post = xs.clone()
+    xs_train = xs
+    xs_test = xs.clone()
     b_size = xs.shape[0]
     for i in range(1, n_points):
-        xs_train_pre_i = xs[:, :i, :]
+        xs_train_i = xs[:, :i, :]
         perm = torch.stack([torch.randperm(i) for _ in range(b_size)]).unsqueeze(dim=1)
-        ind_mat = (perm == 0) + 0.0
-        xs_test_post[:, i:i + 1, :] = ind_mat @ xs_train_pre_i
+        ind_mat = (perm == 0).float().unsqueeze(dim=1)
+        xs_test[:, i:i + 1, :] = ind_mat @ xs_train_i
 
-    return xs_train_pre, xs_test_post
+    return xs_train, xs_test
 
 
 def aggregate_metrics(metrics, bootstrap_trials=1000):
     """
     Takes as input a tensor of shape (num_eval, n_points) and returns a dict with
-    per-point mean, stddev, and bootstrap limits
+    per-point mean, stddev, and bootstrap limits.
     """
     results = {}
     results["mean"] = metrics.mean(dim=0)
@@ -217,7 +214,7 @@ def build_evals(conf):
     for strategy in [
             "random_quadrants",
             "orthogonal_train_test",
-            "overlapping_train_test",
+            "proj_train_test",
     ]:
         evaluation_kwargs[strategy] = {"prompting_strategy": strategy}
 
@@ -406,3 +403,4 @@ if __name__ == "__main__":
         for run_id in tqdm(os.listdir(task_dir)):
             run_path = os.path.join(run_dir, task, run_id)
             metrics = get_run_metrics(run_path)
+

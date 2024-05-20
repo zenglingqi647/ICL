@@ -13,7 +13,7 @@ from samplers import get_data_sampler
 from curriculum import Curriculum
 from schema import schema
 from models import build_model
-from eval import gen_standard, gen_opposite_quadrants, gen_random_quadrants, gen_overlapping_train_test, gen_orthogonal_train_test
+from eval import gen_standard, gen_opposite_quadrants, gen_random_quadrants, gen_proj_train_test, gen_orthogonal_train_test
 
 import wandb
 
@@ -23,7 +23,7 @@ DATAGEN_DICT = {
     "opposite": gen_opposite_quadrants,
     "random": gen_random_quadrants,
     "orthogonal": gen_orthogonal_train_test,
-    "overlapping": gen_overlapping_train_test
+    "proj": gen_proj_train_test
 }
 
 

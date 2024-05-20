@@ -63,14 +63,14 @@ python train.py --config conf/ood/standard.yaml
 python train.py --config conf/ood/opposite.yaml
 python train.py --config conf/ood/random.yaml
 python train.py --config conf/ood/orthogonal.yaml
-python train.py --config conf/ood/overlapping.yaml
+python train.py --config conf/ood/proj.yaml
 
 # rbf logistic regression
 python train.py --config conf/ood/standard_rbf.yaml
 python train.py --config conf/ood/opposite_rbf.yaml
 python train.py --config conf/ood/random_rbf.yaml
 python train.py --config conf/ood/orthogonal_rbf.yaml
-python train.py --config conf/ood/overlapping_rbf.yaml
+python train.py --config conf/ood/proj_rbf.yaml
 ```
 Evaluate and plot:
 The working directory should be **Your_path/ICL/**

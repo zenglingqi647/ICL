@@ -59,7 +59,7 @@ training_schema = {
     "resume_id": merge(tstring, nullable, default(None)),  # run uuid64
     "curriculum": stdict(curriculum_schema),
     "random_labels": merge(tstring, allowed(["None", "normal", "uniform", "permute"])),
-    "train_test_dist": merge(tstring, allowed(["standard", "opposite", "random", "orthogonal", "overlapping"])),
+    "train_test_dist": merge(tstring, allowed(["standard", "opposite", "random", "orthogonal", "proj"])),
 }
 
 wandb_schema = {
