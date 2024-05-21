@@ -1,8 +1,7 @@
 import json
 import os
 import sys
-
-from quinine import QuinineConfig
+from quinine import Quinfig as QuinineConfig
 import numpy as np
 import pandas as pd
 from tqdm import tqdm

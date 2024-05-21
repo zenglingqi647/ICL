@@ -225,7 +225,7 @@ class RBFLogisticRegression(LogisticRegression):
         # else:
         self.center = torch.randn(size=(self.b_size, 1, n_dims))
         # Generate radius randomly for each batch
-        self.radius = torch.rand(self.b_size, 1, 1)
+        self.radius = torch.rand(self.b_size, 1)
 
     def evaluate(self, xs_b):
         dist = (torch.cdist(xs_b, self.center).squeeze(-1))
