@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from quinine import QuinineConfig
+from omegaconf import OmegaConf
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -16,7 +16,7 @@ from tasks import get_task_sampler
 
 def get_model_from_run(run_path, step=-1, only_conf=False):
     config_path = os.path.join(run_path, "config.yaml")
-    conf = QuinineConfig.from_file(config_path)
+    conf = OmegaConf.load(config_path)
     if only_conf:
         return None, conf
 
@@ -91,7 +91,6 @@ def gen_orthogonal_train_test(data_sampler, n_points, b_size, n_dims_truncated=N
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     n_dim = xs.shape[2]
     n_points = min(n_points, n_dim)
-    # raise ValueError("number of points should be at most the dimension.")
     xs_train = xs
     xs_test = torch.zeros(xs.shape)
     for i in range(n_points):
@@ -303,13 +302,6 @@ def get_run_metrics(run_path, step=-1, cache=True, skip_model_load=False, skip_b
     else:
         save_path = os.path.join(run_path, f"metrics_{step}.json")
 
-    # recompute = False
-    # if save_path is not None and os.path.exists(save_path):
-    #     checkpoint_created = os.path.getmtime(run_path)
-    #     cache_created = os.path.getmtime(save_path)
-    #     if checkpoint_created > cache_created:
-    #         recompute = True
-
     all_metrics = compute_evals(all_models, evaluation_kwargs, save_path, recompute)
     return all_metrics
 
@@ -390,7 +382,6 @@ def read_run_dir(run_dir):
                 all_runs[k].append(v)
 
     df = pd.DataFrame(all_runs).sort_values("run_name")
-    # assert len(df) == len(df.run_name.unique())
     return df
 
 

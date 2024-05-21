@@ -7,7 +7,7 @@ This study investigates the in-context learning capabilities of Generative Pre-t
 
 ## Setup
 The conda environment for this project can be installed using the following command (Linux):
-```
+```bash
 conda env create -f environment.yml
 ```
 
@@ -16,12 +16,15 @@ create from scratch:
 conda create -n icl python=3.9
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
 conda install tqdm wandb matplotlib pandas -c conda-forge -y
-pip install quinine
+# pip install quinine
+conda install transformers -c conda-forge -y
+pip install pandas
+conda install omegaconf -c conda-forge -y
 ```
 
 ## Run the Code
 Setup:
-```
+```bash
 cd /Your_src_folder_path
 conda activate icl
 export CUDA_VISIBLE_DEVICES=Your_GPU_ID
@@ -29,43 +32,43 @@ export CUDA_VISIBLE_DEVICES=Your_GPU_ID
 
 ### Basic Experiments
 Vanilla Logistic Regression:
-```
+```bash
 python train.py --config conf/logistic_regression.yaml
 ```
 
 RBF Logistic Regression with Clean Training and Testing Data:
-```
+```bash
 python train.py --config conf/rbf_logistic_regression.yaml
 ```
 
 ### Add Noise
 Vanilla and RBF Logistic Regression with Noisy Training and Testing Data:
-```
+```bash
 python train.py --config conf/lr_noise0.2.yaml
 python train.py --config conf/rbf_lr_noise0.2.yaml
 ```
 We also experimented noise probabilities of 0.05 and 0.1, which could be run by replacing the 0.2 with 0.05 and 0.1
 
 ### Varying problem dimensions
-```
+```bash
 python train.py --config conf/rbf_lr_noise0.1_dim[10/30/40].yaml
 ```
 
 ### Varying model capacity
-```
+```bash
 python train.py --config conf/rbf_lr_[small/tiny]_noise0.1.yaml
 ```
 
 ### Scaling
 Modify the **task** and **run_id** in /ICL/src/analysis/query_scale.py, and run
-```
+```bash
 python /ICL/src/analysis/query_scale.py
 ```
 
 ### Data Distribution
 Train:
 The working directory should be **Your_path/ICL/src**
-```
+```bash
 # logistic regression
 python train.py --config conf/ood/standard.yaml
 python train.py --config conf/ood/opposite.yaml
@@ -82,15 +85,15 @@ python train.py --config conf/ood/proj_rbf.yaml
 ```
 Evaluate and plot:
 The working directory should be **Your_path/ICL/**
-```
-export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
-python /data1/lzengaf/cs182/ICL/src/analysis/ood.py
+```bash
+export PYTHONPATH={YOUR_WORKING_DIR}/ICL/src
+python {YOUR_WORKING_DIR}/ICL/src/analysis/ood.py
 ```
 
 ### Random label
 Train:
 The working directory should be **Your_path/ICL/src/**
-```
+```bash
 # logistic regression
 python train.py --config conf/randlb/None.yaml
 python train.py --config conf/randlb/normal.yaml
@@ -105,14 +108,15 @@ python train.py --config conf/randlb/uniform_rbf.yaml
 ```
 Evaluate and plot:
 The working directory should be **Your_path/ICL/**
-```
-export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
-python /data1/lzengaf/cs182/ICL/src/analysis/randlb.py
+```bash
+export PYTHONPATH={YOUR_WORKING_DIR}/ICL/src
+python {YOUR_WORKING_DIR}/ICL/src/analysis/randlb.py
 ```
 
 ## Testing
 ood data generation and visualization:
 ```bash
+export PYTHONPATH=/csproject/t3_lzengaf/lzengaf/ICL/src
 python src/test/ood_data.py
 ```
 

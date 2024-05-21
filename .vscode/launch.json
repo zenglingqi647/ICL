@@ -4,10 +4,16 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
-
-    
-
+        {
+            "name": "ood test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/test/ood_data.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "/csproject/t3_lzengaf/lzengaf/ICL/src"
+            },
+        },
         {
             "name": "Python: noisy_rbf_capacity",
             "type": "python",

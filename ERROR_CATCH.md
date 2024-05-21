@@ -46,3 +46,6 @@ Please carefully study the documentation linked above for further help.
 Original error was: No module named 'numpy.core._multiarray_umath'
 ```
 ### Sol:
+```
+pip upgrade numpy version
+```
