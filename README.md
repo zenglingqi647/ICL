@@ -11,6 +11,14 @@ The conda environment for this project can be installed using the following comm
 conda env create -f environment.yml
 ```
 
+create from scratch:
+```bash
+conda create -n icl python=3.9
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
+conda install tqdm wandb matplotlib pandas -c conda-forge -y
+pip install quinine
+```
+
 ## Run the Code
 Setup:
 ```

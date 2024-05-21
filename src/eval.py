@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from omegaconf import OmegaConf
+from quinine import QuinineConfig
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -16,8 +16,7 @@ from tasks import get_task_sampler
 
 def get_model_from_run(run_path, step=-1, only_conf=False):
     config_path = os.path.join(run_path, "config.yaml")
-    with open(config_path) as fp:  # we don't Quinfig it to avoid inherits
-        conf = OmegaConf.load(fp)
+    conf = QuinineConfig.from_file(config_path)
     if only_conf:
         return None, conf
 
@@ -403,4 +402,3 @@ if __name__ == "__main__":
         for run_id in tqdm(os.listdir(task_dir)):
             run_path = os.path.join(run_dir, task, run_id)
             metrics = get_run_metrics(run_path)
-
