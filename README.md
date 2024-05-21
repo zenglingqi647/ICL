@@ -110,6 +110,12 @@ export PYTHONPATH=/data1/lzengaf/cs182/ICL/src
 python /data1/lzengaf/cs182/ICL/src/analysis/randlb.py
 ```
 
+## Testing
+ood data generation and visualization:
+```bash
+python src/test/ood_data.py
+```
+
 ## Code Reading Note
 Curriculum:
 > n_dims start=5, ends=20
