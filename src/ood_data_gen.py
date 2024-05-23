@@ -3,11 +3,11 @@ import torch
 import matplotlib.pyplot as plt
 from samplers import get_data_sampler, sample_transformation
 from tqdm import tqdm
-
+import itertools
 # Functions for generating different kinds of train - test data
 
 
-def gen_standard(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+def gen_standard(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     return xs, None
 
@@ -20,13 +20,15 @@ def gen_opposite_quadrants(data_sampler,
     """
     Generate train-test data that randomly distributed in opposite quadrants.
 
-    Args:
+     Args:
         data_sampler (DataSampler): DataSampler object.
         n_points (int): Number of points to sample.
         b_size (int): Batch size.
-        n_dims_truncated (int): Number of dimensions to sample.
-        seeds (int): Random seed.
+        n_dims_truncated (int): Number of dimensions to sample.. Defaults to None.
+        seeds (int): Random seed. Defaults to None.
 
+    Returns:
+        Tuple: Tuple of train and test data (torch.Tensor, torch.Tensor)
     """
     xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
@@ -40,16 +42,40 @@ def gen_opposite_quadrants(data_sampler,
     return xs_train, xs_test
 
 
-def gen_random_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
+def gen_random_quadrants(data_sampler,
+                         n_points: int,
+                         b_size: int,
+                         n_dims_truncated: int = None,
+                         seeds: int = None) -> Tuple:
+    """Generate train-test data that randomly distributed in quadrants.
 
-    xs_train = xs.abs() * pattern
-    xs_test = xs
+    Args:
+        data_sampler (DataSampler): DataSampler object.
+        n_points (int): Number of points to sample.
+        b_size (int): Batch size.
+        n_dims_truncated (int): Number of dimensions to sample.. Defaults to None.
+        seeds (int): Random seed. Defaults to None.
+
+    Returns:
+        Tuple: Tuple of train and test data (torch.Tensor, torch.Tensor)
+    """
+    xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+    xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+
+    max_perm = 2 * n_points
+    perm_set = set()
+    for perm in itertools.permutations(torch.sign(torch.randn(n_dims_truncated)).numpy()):
+        perm_set.add(perm)
+        if len(perm_set) >= max_perm:
+            break
+
+    permutations = torch.tensor(list(perm_set), dtype=torch.float32)
+    xs_train = xs_train.abs() * permutations[:n_points]
+    xs_test = xs_test.abs() * permutations[n_points:]
     return xs_train, xs_test
 
 
-def gen_orthogonal(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+def gen_orthogonal(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     n_dim = xs.shape[2]
     n_points = min(n_points, n_dim)
@@ -68,7 +94,7 @@ def gen_orthogonal(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=
     return xs_train, xs_test
 
 
-def gen_projection(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+def gen_projection(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_train = xs
     xs_test = xs.clone()
@@ -81,7 +107,7 @@ def gen_projection(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=
     return xs_train, xs_test
 
 
-def gen_expansion(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
+def gen_expansion(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_train = xs
     xs_test = xs.clone()
@@ -105,7 +131,7 @@ if __name__ == "__main__":
         "projection": gen_projection,
         "expansion": gen_expansion
     }
-    for i in tqdm(range(20)):
+    for i in tqdm(range(1)):
         xs, test_xs = func_dict[task](data_sampler, 40, 1, 20)
         max_range = max(abs(xs[..., 0].min()), abs(xs[..., 0].max()), abs(xs[..., 1].min()), abs(xs[..., 1].max()),
                         abs(test_xs[..., 0].min()), abs(test_xs[..., 0].max()), abs(test_xs[..., 1].min()),
