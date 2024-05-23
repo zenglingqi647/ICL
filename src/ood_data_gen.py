@@ -169,6 +169,44 @@ def gen_projection(data_sampler,
                    n_dims_truncated: int = None,
                    seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
     """
+    Generate train-test data pair. The testing data is projected onto a random hyperplane, which has dimensions of n_dims_truncated // 2 + 1, and the training data is distributed in the entire space.
+
+    Args:
+        data_sampler (DataSampler): DataSampler object.
+        n_points (int): Number of points to sample.
+        b_size (int): Batch size.
+        n_dims_truncated (int): Number of dimensions to sample. Defaults to None.
+        seeds (int): Random seed. Defaults to None.
+
+    Returns:
+        Tuple: Tuple of train and test data (torch.Tensor, torch.Tensor)
+    """
+    if seeds is not None:
+        torch.manual_seed(seeds)
+    if n_dims_truncated is None:
+        n_dims_truncated = xs_train.shape[-1]
+    # TODO: n_dims should be passed in
+    assert n_dims_truncated <= 20, "n_dims_truncated should be less than or equal to 20"
+
+    xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+    xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+
+    n_dims_to_zero = n_dims_truncated - (n_dims_truncated // 2 + 1)
+    zero_indices = torch.randperm(n_dims_truncated)[:n_dims_to_zero]
+
+    mask = torch.ones_like(xs_train)
+    mask[..., n_dims_truncated:] = 0
+    mask[..., zero_indices] = 0
+
+    return xs_train, xs_test * mask
+
+
+def gen_expansion(data_sampler,
+                  n_points: int,
+                  b_size: int,
+                  n_dims_truncated: int = None,
+                  seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
     Generate train-test data pair. The training data is projected onto a random hyperplane, which has dimensions of n_dims_truncated // 2 + 1, and the test data is distributed in the entire space.
 
     Args:
@@ -191,7 +229,7 @@ def gen_projection(data_sampler,
     xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
 
-    n_dims_to_zero = n_dims_truncated - (n_dims_truncated//2 + 1)
+    n_dims_to_zero = n_dims_truncated - (n_dims_truncated // 2 + 1)
     zero_indices = torch.randperm(n_dims_truncated)[:n_dims_to_zero]
 
     mask = torch.ones_like(xs_train)
@@ -199,23 +237,6 @@ def gen_projection(data_sampler,
     mask[..., zero_indices] = 0
 
     return xs_train * mask, xs_test
-
-
-def gen_expansion(data_sampler,
-                  n_points: int,
-                  b_size: int,
-                  n_dims_truncated: int = None,
-                  seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    xs_train = xs
-    xs_test = xs.clone()
-    b_size = xs.shape[0]
-    for i in range(1, n_points):
-        xs_train_i = xs[:, :i, :]
-        perm = torch.stack([torch.randperm(i) for _ in range(b_size)]).unsqueeze(dim=1)
-        ind_mat = (perm == 0).float().unsqueeze(dim=1)
-        xs_test[:, i:i + 1, :] = ind_mat @ xs_train_i
-    return xs_train, xs_test
 
 
 if __name__ == "__main__":
