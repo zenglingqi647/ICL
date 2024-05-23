@@ -117,7 +117,7 @@ python {YOUR_WORKING_DIR}/ICL/src/analysis/randlb.py
 ood data generation and visualization:
 ```bash
 export PYTHONPATH=/csproject/t3_lzengaf/lzengaf/ICL/src
-python src/test/ood_data.py
+python src/ood_data_gen.py
 ```
 
 ## Code Reading Note
