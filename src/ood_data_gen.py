@@ -32,7 +32,9 @@ def gen_opposite_quadrants(data_sampler,
     """
     xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    pattern = torch.sign(torch.randn(n_dims_truncated))
+
+    # TODO: n_dims should be passed in
+    pattern = torch.sign(torch.randn(20))
     assert xs_train.shape[-1] == pattern.shape[0] and xs_test.shape[-1] == pattern.shape[
         0], "Pattern dimension must match data dimension."
     pattern = pattern.view(1, 1, -1)
@@ -47,7 +49,8 @@ def gen_random_quadrants(data_sampler,
                          b_size: int,
                          n_dims_truncated: int = None,
                          seeds: int = None) -> Tuple:
-    """Generate train-test data that randomly distributed in quadrants.
+    """Generate train-test data that randomly distributed in quadrants. While n_dims_truncated is less than 4, all training points and testing points will have the same patterns, respectively. Otherwise, the patterns will be randomly generated for each point.
+    The process is the same for each sample in the batch.
 
     Args:
         data_sampler (DataSampler): DataSampler object.
@@ -62,14 +65,24 @@ def gen_random_quadrants(data_sampler,
     xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
 
+    if n_dims_truncated < 4:
+        # TODO: n_dims should be passed in
+        pattern_train = torch.sign(torch.randn(20))
+        pattern_test = torch.sign(torch.randn(20))
+        while torch.all(pattern_train[:n_dims_truncated] == pattern_test[:n_dims_truncated]):
+            pattern_test = torch.sign(torch.randn(20))
+        return xs_train.abs() * pattern_train, xs_test.abs() * pattern_test
+
     max_perm = 2 * n_points
     perm_set = set()
     for perm in itertools.permutations(torch.sign(torch.randn(n_dims_truncated)).numpy()):
-        perm_set.add(perm)
+        init_tensor = torch.zeros(20)
+        init_tensor[:n_dims_truncated] = torch.tensor(perm)
+        perm_set.add(init_tensor)
         if len(perm_set) >= max_perm:
             break
 
-    permutations = torch.tensor(list(perm_set), dtype=torch.float32)
+    permutations = torch.stack(list(perm_set)).type(torch.float32)
     xs_train = xs_train.abs() * permutations[:n_points]
     xs_test = xs_test.abs() * permutations[n_points:]
     return xs_train, xs_test
@@ -122,7 +135,7 @@ def gen_expansion(data_sampler, n_points: int, b_size: int, n_dims_truncated: in
 
 if __name__ == "__main__":
     data_sampler = get_data_sampler('gaussian', n_dims=20)
-    task = "opposite_quadrants"
+    task = "random_quadrants"
     func_dict = {
         # "standard": gen_standard,
         "opposite_quadrants": gen_opposite_quadrants,
@@ -132,7 +145,8 @@ if __name__ == "__main__":
         "expansion": gen_expansion
     }
     for i in tqdm(range(1)):
-        xs, test_xs = func_dict[task](data_sampler, 40, 1, 20)
+        xs, test_xs = func_dict[task](data_sampler, 40, 1, 6)
+        # xs, test_xs = func_dict[task](data_sampler, 40, 1, 20)
         max_range = max(abs(xs[..., 0].min()), abs(xs[..., 0].max()), abs(xs[..., 1].min()), abs(xs[..., 1].max()),
                         abs(test_xs[..., 0].min()), abs(test_xs[..., 0].max()), abs(test_xs[..., 1].min()),
                         abs(test_xs[..., 1].max()))
