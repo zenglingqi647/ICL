@@ -90,9 +90,9 @@ def gen_random_orthant(data_sampler,
     max_perm = 2 * n_points
     perm_set = set()
     dim_signs = torch.sign(torch.randn(n_dims_truncated))
-    for i in range(max_perm):
+    for _ in range(max_perm):
         init_tensor = torch.zeros(20)
-        init_tensor[:n_dims_truncated] = torch.randperm(dim_signs)
+        init_tensor[:n_dims_truncated] = dim_signs[torch.randperm(dim_signs.shape[0])]
         perm_set.add(init_tensor)
         if len(perm_set) >= max_perm:
             break
