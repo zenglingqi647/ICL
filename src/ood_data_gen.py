@@ -12,13 +12,13 @@ def gen_standard(data_sampler, n_points: int, b_size: int, n_dims_truncated: int
     return xs, None
 
 
-def gen_opposite_quadrants(data_sampler,
+def gen_opposite_orthant(data_sampler,
                            n_points: int,
                            b_size: int,
                            n_dims_truncated: int = None,
                            seeds: int = None) -> Tuple:
     """
-    Generate train-test data that randomly distributed in opposite quadrants.
+    Generate train-test data that randomly distributed in opposite orthant.
 
      Args:
         data_sampler (DataSampler): DataSampler object.
@@ -44,12 +44,12 @@ def gen_opposite_quadrants(data_sampler,
     return xs_train, xs_test
 
 
-def gen_random_quadrants(data_sampler,
+def gen_random_orthant(data_sampler,
                          n_points: int,
                          b_size: int,
                          n_dims_truncated: int = None,
                          seeds: int = None) -> Tuple:
-    """Generate train-test data that randomly distributed in quadrants. While n_dims_truncated is less than 4, all training points and testing points will have the same patterns, respectively. Otherwise, the patterns will be randomly generated for each point.
+    """Generate train-test data that randomly distributed in orthant. While n_dims_truncated is less than 4, all training points and testing points will have the same patterns, respectively. Otherwise, the patterns will be randomly generated for each point.
     The process is the same for each sample in the batch.
 
     Args:
@@ -135,11 +135,11 @@ def gen_expansion(data_sampler, n_points: int, b_size: int, n_dims_truncated: in
 
 if __name__ == "__main__":
     data_sampler = get_data_sampler('gaussian', n_dims=20)
-    task = "random_quadrants"
+    task = "random_orthant"
     func_dict = {
         # "standard": gen_standard,
-        "opposite_quadrants": gen_opposite_quadrants,
-        "random_quadrants": gen_random_quadrants,
+        "opposite_orthant": gen_opposite_orthant,
+        "random_orthant": gen_random_orthant,
         "orthogonal": gen_orthogonal,
         "projection": gen_projection,
         "expansion": gen_expansion
