@@ -8,19 +8,33 @@ import itertools
 
 
 def gen_standard(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    return xs, None
+    """
+    Generate standard train-test data.
+
+    Args:
+        data_sampler (DataSampler): DataSampler object.
+        n_points (int): Number of points to sample.
+        b_size (int): Batch size.
+        n_dims_truncated (int): Number of dimensions to sample.. Defaults to None.
+        seeds (int): Random seed. Defaults to None.
+
+    Returns:
+        Tuple: Tuple of train and test data (torch.Tensor, torch.Tensor)
+    """
+    xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+    xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+    return xs_train, xs_test
 
 
 def gen_opposite_orthant(data_sampler,
-                           n_points: int,
-                           b_size: int,
-                           n_dims_truncated: int = None,
-                           seeds: int = None) -> Tuple:
+                         n_points: int,
+                         b_size: int,
+                         n_dims_truncated: int = None,
+                         seeds: int = None) -> Tuple:
     """
     Generate train-test data that randomly distributed in opposite orthant.
 
-     Args:
+    Args:
         data_sampler (DataSampler): DataSampler object.
         n_points (int): Number of points to sample.
         b_size (int): Batch size.
@@ -45,10 +59,10 @@ def gen_opposite_orthant(data_sampler,
 
 
 def gen_random_orthant(data_sampler,
-                         n_points: int,
-                         b_size: int,
-                         n_dims_truncated: int = None,
-                         seeds: int = None) -> Tuple:
+                       n_points: int,
+                       b_size: int,
+                       n_dims_truncated: int = None,
+                       seeds: int = None) -> Tuple:
     """Generate train-test data that randomly distributed in orthant. While n_dims_truncated is less than 4, all training points and testing points will have the same patterns, respectively. Otherwise, the patterns will be randomly generated for each point.
     The process is the same for each sample in the batch.
 
@@ -75,14 +89,16 @@ def gen_random_orthant(data_sampler,
 
     max_perm = 2 * n_points
     perm_set = set()
-    for perm in itertools.permutations(torch.sign(torch.randn(n_dims_truncated)).numpy()):
+    dim_signs = torch.sign(torch.randn(n_dims_truncated))
+    for i in range(max_perm):
         init_tensor = torch.zeros(20)
-        init_tensor[:n_dims_truncated] = torch.tensor(perm)
+        init_tensor[:n_dims_truncated] = torch.randperm(dim_signs)
         perm_set.add(init_tensor)
         if len(perm_set) >= max_perm:
             break
 
     permutations = torch.stack(list(perm_set)).type(torch.float32)
+
     xs_train = xs_train.abs() * permutations[:n_points]
     xs_test = xs_test.abs() * permutations[n_points:]
     return xs_train, xs_test
