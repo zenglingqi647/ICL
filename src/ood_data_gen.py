@@ -1,13 +1,81 @@
+"""
+Functions for generating different kinds of train - test data
+"""
 from typing import Tuple
 import torch
 import matplotlib.pyplot as plt
 from samplers import get_data_sampler, sample_transformation
 from tqdm import tqdm
-import itertools
-# Functions for generating different kinds of train - test data
+# TODO: args passing
 
 
-def gen_standard(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
+def project_onto_hyperplane(data: torch.Tensor, normal: torch.Tensor) -> torch.Tensor:
+    """
+    Projects data onto the hyperplane defined by the given normal vector.
+
+    Args:
+        data (torch.Tensor): Data to be projected. Only the first `n_dims_truncated` dimensions are considered for projection.
+        normal (torch.Tensor): Normal vector of the hyperplane. The dimension of the normal vector is the same as `n_dims_truncated`.
+
+    Returns:
+        torch.Tensor: Projected data.
+    """
+    subsp_data = data[..., :normal.shape[0]]
+    return_data = torch.zeros_like(data)
+
+    normal = normal / torch.norm(normal)  # Ensure the normal is a unit vector
+    projection_matrix = torch.eye(subsp_data.shape[-1]) - torch.outer(normal, normal)
+    data_projected = subsp_data @ projection_matrix.t()
+    return_data[..., :normal.shape[0]] = data_projected
+    return return_data
+
+
+def gen_orthogonal(data_sampler,
+                   n_points: int,
+                   b_size: int,
+                   n_dims_truncated: int = None,
+                   seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Generate train-test data that are orthogonally distributed in the subspace spanned by the first n_dims_truncated.
+
+    Args:
+        data_sampler (DataSampler): DataSampler object.
+        n_points (int): Number of points to sample.
+        b_size (int): Batch size.
+        n_dims_truncated (int): Number of dimensions to sample. Defaults to None.
+        seeds (int): Random seed. Defaults to None.
+
+    Returns:
+        Tuple: Tuple of train and test data (torch.Tensor, torch.Tensor)
+    """
+    if seeds is not None:
+        torch.manual_seed(seeds)
+    if n_dims_truncated is None:
+        n_dims_truncated = xs_train.shape[-1]
+    # TODO: n_dims should be passed in
+    assert n_dims_truncated <= 20, "n_dims_truncated should be less than or equal to 20"
+
+    xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+    xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+
+    normal_vector = torch.randn(n_dims_truncated)
+    normal_vector = normal_vector / torch.norm(normal_vector)  # Normalize to unit vector
+
+    orthogonal_normal = torch.randn(n_dims_truncated)
+    orthogonal_normal -= orthogonal_normal @ normal_vector * normal_vector  # Make orthogonal to normal_vector
+    orthogonal_normal = orthogonal_normal / torch.norm(orthogonal_normal)  # Normalize to unit vector
+
+    xs_train_projected = project_onto_hyperplane(xs_train, normal_vector)
+    xs_test_projected = project_onto_hyperplane(xs_test, orthogonal_normal)
+
+    return xs_train_projected, xs_test_projected
+
+
+def gen_standard(data_sampler,
+                 n_points: int,
+                 b_size: int,
+                 n_dims_truncated: int = None,
+                 seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Generate standard train-test data.
 
@@ -30,7 +98,7 @@ def gen_opposite_orthant(data_sampler,
                          n_points: int,
                          b_size: int,
                          n_dims_truncated: int = None,
-                         seeds: int = None) -> Tuple:
+                         seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Generate train-test data that randomly distributed in opposite orthant.
 
@@ -62,9 +130,8 @@ def gen_random_orthant(data_sampler,
                        n_points: int,
                        b_size: int,
                        n_dims_truncated: int = None,
-                       seeds: int = None) -> Tuple:
-    """Generate train-test data that randomly distributed in orthant. While n_dims_truncated is less than 4, all training points and testing points will have the same patterns, respectively. Otherwise, the patterns will be randomly generated for each point.
-    The process is the same for each sample in the batch.
+                       seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Generate train-test data that randomly distributed in orthant. The process is the same for each sample in the batch.
 
     Args:
         data_sampler (DataSampler): DataSampler object.
@@ -78,14 +145,6 @@ def gen_random_orthant(data_sampler,
     """
     xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_test = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-
-    if n_dims_truncated < 4:
-        # TODO: n_dims should be passed in
-        pattern_train = torch.sign(torch.randn(20))
-        pattern_test = torch.sign(torch.randn(20))
-        while torch.all(pattern_train[:n_dims_truncated] == pattern_test[:n_dims_truncated]):
-            pattern_test = torch.sign(torch.randn(20))
-        return xs_train.abs() * pattern_train, xs_test.abs() * pattern_test
 
     max_perm = 2 * n_points
     perm_set = set()
@@ -104,26 +163,55 @@ def gen_random_orthant(data_sampler,
     return xs_train, xs_test
 
 
-def gen_orthogonal(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    n_dim = xs.shape[2]
-    n_points = min(n_points, n_dim)
-    xs_train = xs
-    xs_test = torch.zeros(xs.shape)
-    for i in range(n_points):
-        xs_test_i = xs[:, i:i + 1, :]
-        xs_train_i = xs[:, :i, :]
-        _, _, Vt = torch.linalg.svd(xs_train_i, full_matrices=False)
-        xs_train_i_projection = Vt.transpose(1, 2) @ Vt
-        xs_test_i_orthogonalized = (xs_test_i - xs_test_i @ xs_train_i_projection)
-        xs_test_i_normalized = (xs_test_i_orthogonalized * xs_test_i.norm(dim=2).unsqueeze(2) /
-                                xs_test_i_orthogonalized.norm(dim=2).unsqueeze(2))
+# def gen_orthogonal(data_sampler,
+#                    n_points: int,
+#                    b_size: int,
+#                    n_dims_truncated: int = None,
+#                    seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
+#     """
+#     Generate train-test data that distributed in orthogonal space.
 
-        xs_test[:, i:i + 1, :] = xs_test_i_normalized
-    return xs_train, xs_test
+#     Args:
+#         data_sampler (DataSampler): DataSampler object.
+#         n_points (int): Number of points to sample.
+#         b_size (int): Batch size.
+#         n_dims_truncated (int): Number of dimensions to sample. Defaults to None.
+#         seeds (int): Random seed. Defaults to None.
+
+#     Returns:
+#         Tuple: Tuple of train and test data (torch.Tensor, torch.Tensor)
+#     """
+#     if seeds is not None:
+#         torch.manual_seed(seeds)
+
+#     xs_train = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
+#     n_dim = xs_train.shape[2]
+#     n_points = min(n_points, n_dim)
+#     xs_test = torch.zeros_like(xs_train)
+
+#     for i in range(n_points):
+#         xs_test_i = xs_train[:, i:i + 1, :]
+#         xs_train_i = xs_train[:, :i, :]
+
+#         if i > 0:
+#             _, _, Vt = torch.linalg.svd(xs_train_i, full_matrices=False)
+#             xs_train_i_projection = Vt.transpose(1, 2) @ Vt
+#             xs_test_i_orthogonalized = xs_test_i - xs_test_i @ xs_train_i_projection
+#             xs_test_i_norm = xs_test_i_orthogonalized.norm(dim=2, keepdim=True)
+#             xs_test_i_normalized = xs_test_i_orthogonalized * (xs_test_i.norm(dim=2, keepdim=True) / xs_test_i_norm)
+#         else:
+#             xs_test_i_normalized = xs_test_i
+
+#         xs_test[:, i:i + 1, :] = xs_test_i_normalized
+
+#     return xs_train, xs_test
 
 
-def gen_projection(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
+def gen_projection(data_sampler,
+                   n_points: int,
+                   b_size: int,
+                   n_dims_truncated: int = None,
+                   seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_train = xs
     xs_test = xs.clone()
@@ -136,7 +224,11 @@ def gen_projection(data_sampler, n_points: int, b_size: int, n_dims_truncated: i
     return xs_train, xs_test
 
 
-def gen_expansion(data_sampler, n_points: int, b_size: int, n_dims_truncated: int = None, seeds: int = None) -> Tuple:
+def gen_expansion(data_sampler,
+                  n_points: int,
+                  b_size: int,
+                  n_dims_truncated: int = None,
+                  seeds: int = None) -> Tuple[torch.Tensor, torch.Tensor]:
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     xs_train = xs
     xs_test = xs.clone()
@@ -151,7 +243,7 @@ def gen_expansion(data_sampler, n_points: int, b_size: int, n_dims_truncated: in
 
 if __name__ == "__main__":
     data_sampler = get_data_sampler('gaussian', n_dims=20)
-    task = "random_orthant"
+    task = "orthogonal"
     func_dict = {
         # "standard": gen_standard,
         "opposite_orthant": gen_opposite_orthant,
