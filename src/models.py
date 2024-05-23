@@ -794,7 +794,7 @@ class GPModel:
                         continue
                     test_x = xs[j, i:i + 1]
 
-                    clf = GaussianProcessClassifier()
+                    clf = make_pipeline(StandardScaler(), GaussianProcessClassifier())
                     clf.fit(train_xs, train_ys)
 
                     y_pred = clf.predict_proba(test_x)

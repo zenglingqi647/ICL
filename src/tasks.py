@@ -223,9 +223,10 @@ class RBFLogisticRegression(LogisticRegression):
         #     self.center = torch.randn(size=(1, 1, n_dims))
         #     self.radius = torch.rand(1, 1, 1)
         # else:
-        self.center = torch.randn(size=(self.b_size, 1, n_dims))
+        # self.center = torch.randn(size=(self.b_size, 1, n_dims))
+        self.center = torch.randn(size=(batch_size, 1, n_dims))
         # Generate radius randomly for each batch
-        self.radius = torch.rand(self.b_size, 1)
+        self.radius = torch.sqrt(torch.tensor(2 * n_dims)) + torch.randn(batch_size, 1) * 0.1  # Radius around sqrt(2d)
 
     def evaluate(self, xs_b):
         dist = (torch.cdist(xs_b, self.center).squeeze(-1))
@@ -252,9 +253,8 @@ class NoisyRBFLogisticRegression(RBFLogisticRegression):
                  scale=1,
                  train_noise_prob=0,
                  test_noise_prob=0,
-                 if_test=False,
-                 same_centers=True):
-        super().__init__(n_dims, batch_size, pool_dict, seeds, scale, same_centers)
+                 if_test=False):
+        super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
         self.train_noise_prob = train_noise_prob
         self.test_noise_prob = test_noise_prob
         self.if_test = if_test

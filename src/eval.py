@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from quinine import Quinfig as QuinineConfig
+from omegaconf import OmegaConf
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -15,7 +15,7 @@ from tasks import get_task_sampler
 
 def get_model_from_run(run_path, step=-1, only_conf=False):
     config_path = os.path.join(run_path, "config.yaml")
-    conf = QuinineConfig.from_file(config_path)
+    conf = OmegaConf.load(config_path)
     if only_conf:
         return None, conf
 
@@ -64,7 +64,6 @@ def eval_batch(model, task_sampler, xs, xs_p=None):
 def gen_standard(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     return xs, None
-
 
 def gen_opposite_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
