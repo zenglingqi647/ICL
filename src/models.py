@@ -68,14 +68,14 @@ def get_relevant_baselines(task_name):
             (RBFLogisticModel, {
                 "gamma": 0.1
             }),
-            (LogisticModel, {}),
-            (NNModel, {
-                "n_neighbors": 3
-            }),
-            (GPModel, {}),
-            (RBFGPModel, {
-                "length_scale": 1.0
-            }),
+            # (LogisticModel, {}),
+            # (NNModel, {
+            #     "n_neighbors": 3
+            # }),
+            # (GPModel, {}),
+            # (RBFGPModel, {
+            #     "length_scale": 1.0
+            # }),
             (SVMModel, {
                 "kernel": 'rbf'
             }),
@@ -756,7 +756,7 @@ class SVMModel:
                     if len(np.unique(train_ys)) < 2:
                         continue
 
-                    clf = SVC(kernel=self.kernel, C=self.C, probability=True)
+                    clf = make_pipeline(StandardScaler(), SVC(kernel=self.kernel, C=self.C, probability=True))
                     clf.fit(train_xs, train_ys)
                     test_x = xs[j, i:i + 1]
                     y_pred = clf.predict(test_x)
