@@ -15,5 +15,4 @@ rbf_classification.zip
 *wandb.yaml
 *.zip
 temp/
-src/test/
 figs/opposite
