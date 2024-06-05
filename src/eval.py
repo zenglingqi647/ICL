@@ -145,11 +145,7 @@ def build_evals(conf):
             evaluation_kwargs[name].update(kwargs)
         return evaluation_kwargs
 
-    for strategy in [
-            "random_quadrants",
-            "orthogonal_train_test",
-            "proj_train_test",
-    ]:
+    for strategy in ["opposite_orthant", "random_orthant", "orthogonal", "projection", "expansion"]:
         evaluation_kwargs[strategy] = {"prompting_strategy": strategy}
 
     for method in ["half_subspace", "skewed"]:
