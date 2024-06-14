@@ -13,6 +13,5 @@ training:
     train_test_dist: random
 
 out_dir: ../models/logistic_regression_ood
-
 wandb:
     name: "logistic_regression_random"

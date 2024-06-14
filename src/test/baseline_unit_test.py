@@ -4,7 +4,11 @@ import torch
 import models
 from samplers import get_data_sampler, sample_transformation
 from tasks import get_task_sampler
-from omegaconf import OmegaConf
+# from omegaconf import OmegaConf
+from schema import schema
+from quinine import QuinineArgumentParser
+from train import DATAGEN_DICT
+from ood_data_gen import gen_standard, gen_opposite_orthant, gen_random_orthant, gen_orthogonal, gen_projection, gen_expansion
 
 
 def eval_batch(model, task_sampler, xs, xs_p=None):
@@ -221,7 +225,8 @@ def baseline_names(name):
 
 
 def get_run_metrics(config_path, save_path):
-    conf = OmegaConf.load(config_path)
+    parser = QuinineArgumentParser(schema=schema)
+    conf = parser.parse_quinfig()
     all_models = []
     all_models += models.get_relevant_baselines(conf.training.task)
     evaluation_kwargs = build_evals(conf)
@@ -230,6 +235,6 @@ def get_run_metrics(config_path, save_path):
 
 
 if __name__ == "__main__":
-    config_path = ""
-    save_path = ""
+    config_path = "conf/logistic_regression.yaml"
+    save_path = "test/out"
     metrics = get_run_metrics(config_path, save_path)

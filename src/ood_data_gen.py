@@ -243,7 +243,7 @@ if __name__ == "__main__":
     data_sampler = get_data_sampler('gaussian', n_dims=20)
     task = "projection"
     func_dict = {
-        # "standard": gen_standard,
+        "standard": gen_standard,
         "opposite_orthant": gen_opposite_orthant,
         "random_orthant": gen_random_orthant,
         "orthogonal": gen_orthogonal,

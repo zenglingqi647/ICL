@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "baseline",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src",
+            "program": "test/baseline_unit_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--config",
+                "conf/logistic_regression.yaml"
+            ],
+            "env": {
+                "PYTHONPATH": "/csproject/t3_lzengaf/lzengaf/ICL/src"
+            },
+        },
+        {
             "name": "ood test",
             "type": "debugpy",
             "request": "launch",
