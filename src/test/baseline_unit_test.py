@@ -1,40 +1,14 @@
 import json
-import os
-import sys
-from omegaconf import OmegaConf
-import numpy as np
-import pandas as pd
 from tqdm import tqdm
 import torch
 import models
 from samplers import get_data_sampler, sample_transformation
 from tasks import get_task_sampler
-from omegaconf import OmegaConf
+# from omegaconf import OmegaConf
 from schema import schema
 from quinine import QuinineArgumentParser
-
-
-def get_model_from_run(run_path, step=-1, only_conf=False):
-    config_path = os.path.join(run_path, "config.yaml")
-    conf = OmegaConf.load(config_path)
-    if only_conf:
-        return None, conf
-
-    model = models.build_model(conf.model)
-
-    if step == -1:
-        state_path = os.path.join(run_path, "state.pt")
-        state = torch.load(state_path)
-        model.load_state_dict(state["model_state_dict"])
-    else:
-        model_path = os.path.join(run_path, f"model_{step}.pt")
-        state_dict = torch.load(model_path)
-        model.load_state_dict(state_dict)
-
-    return model, conf
-
-
-# Functions for evaluation
+from train import DATAGEN_DICT
+from ood_data_gen import gen_standard, gen_opposite_orthant, gen_random_orthant, gen_orthogonal, gen_projection, gen_expansion
 
 
 def eval_batch(model, task_sampler, xs, xs_p=None):
@@ -61,66 +35,6 @@ def eval_batch(model, task_sampler, xs, xs_p=None):
             metrics[:, i] = task.get_metric()(pred.cpu(), ys)[:, i]
 
     return metrics
-
-
-# Functions for generating different kinds of train/test data
-
-def gen_standard(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    return xs, None
-
-def gen_opposite_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
-
-    xs_train = xs.abs() * pattern
-    xs_test = -xs_train
-
-    return xs_train, xs_test
-
-
-def gen_random_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    pattern = torch.randn([b_size, 1, xs.shape[2]]).sign()
-
-    xs_train = xs.abs() * pattern
-    xs_test = xs
-
-    return xs_train, xs_test
-
-
-def gen_orthogonal_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    n_dim = xs.shape[2]
-    n_points = min(n_points, n_dim)
-    xs_train = xs
-    xs_test = torch.zeros(xs.shape)
-    for i in range(n_points):
-        xs_test_i = xs[:, i:i + 1, :]
-        xs_train_i = xs[:, :i, :]
-        _, _, Vt = torch.linalg.svd(xs_train_i, full_matrices=False)
-        xs_train_i_projection = Vt.transpose(1, 2) @ Vt
-        xs_test_i_orthogonalized = (xs_test_i - xs_test_i @ xs_train_i_projection)
-        xs_test_i_normalized = (xs_test_i_orthogonalized * xs_test_i.norm(dim=2).unsqueeze(2) /
-                                     xs_test_i_orthogonalized.norm(dim=2).unsqueeze(2))
-
-        xs_test[:, i:i + 1, :] = xs_test_i_normalized
-
-    return xs_train, xs_test
-
-
-def gen_proj_train_test(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
-    xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
-    xs_train = xs
-    xs_test = xs.clone()
-    b_size = xs.shape[0]
-    for i in range(1, n_points):
-        xs_train_i = xs[:, :i, :]
-        perm = torch.stack([torch.randperm(i) for _ in range(b_size)]).unsqueeze(dim=1)
-        ind_mat = (perm == 0).float().unsqueeze(dim=1)
-        xs_test[:, i:i + 1, :] = ind_mat @ xs_train_i
-
-    return xs_train, xs_test
 
 
 def aggregate_metrics(metrics, bootstrap_trials=1000):
@@ -168,7 +82,7 @@ def eval_model(
     all_metrics = []
 
     generating_func = globals()[f"gen_{prompting_strategy}"]
-    for _ in tqdm(range(num_eval_examples // batch_size), ascii=">="):
+    for i in tqdm(range(num_eval_examples // batch_size), ascii=">="):
         xs, xs_p = generating_func(data_sampler, n_points, batch_size)
 
         metrics = eval_batch(model, task_sampler, xs, xs_p)
@@ -256,7 +170,7 @@ def build_evals(conf):
     return evaluation_kwargs
 
 
-def compute_evals(all_models, evaluation_kwargs, save_path=None, recompute=False):
+def compute_evals(all_models, evaluation_kwargs, save_path=None):
     try:
         with open(save_path) as fp:
             all_metrics = json.load(fp)
@@ -265,12 +179,7 @@ def compute_evals(all_models, evaluation_kwargs, save_path=None, recompute=False
 
     for eval_name, kwargs in tqdm(evaluation_kwargs.items()):
         metrics = {}
-        if eval_name in all_metrics and not recompute:
-            metrics = all_metrics[eval_name]
         for model in all_models:
-            if model.name in metrics and not recompute:
-                continue
-
             metrics[model.name] = eval_model(model, **kwargs)
         all_metrics[eval_name] = metrics
 
@@ -279,40 +188,6 @@ def compute_evals(all_models, evaluation_kwargs, save_path=None, recompute=False
             json.dump(all_metrics, fp, indent=2)
 
     return all_metrics
-
-
-def get_run_metrics(run_path, step=-1, cache=True, skip_model_load=False, skip_baselines=False, recompute=False):
-    if skip_model_load:
-        _, conf = get_model_from_run(run_path, only_conf=True)
-        all_models = []
-    else:
-        model, conf = get_model_from_run(run_path, step)
-        model = model.cuda().eval()
-        all_models = [model]
-        if not skip_baselines:
-            all_models += models.get_relevant_baselines(conf.training.task)
-    evaluation_kwargs = build_evals(conf)
-
-    if not cache:
-        save_path = None
-    elif step == -1:
-        save_path = os.path.join(run_path, "metrics.json")
-    else:
-        save_path = os.path.join(run_path, f"metrics_{step}.json")
-
-    all_metrics = compute_evals(all_models, evaluation_kwargs, save_path, recompute)
-    return all_metrics
-
-
-def conf_to_model_name(conf):
-    if conf.model.family == "gpt2":
-        return {
-            (3, 2): "Transformer-xs",
-            (6, 4): "Transformer-small",
-            (12, 8): "Transformer",
-        }[(conf.model.n_layer, conf.model.n_head)]
-    else:
-        return conf.wandb.name
 
 
 def baseline_names(name):
@@ -351,43 +226,17 @@ def baseline_names(name):
     return name
 
 
-def read_run_dir(run_dir):
-    all_runs = {}
-    for task in os.listdir(run_dir):
-        if '.zip' in task:
-            continue
-        task_dir = os.path.join(run_dir, task)
-        for run_id in os.listdir(task_dir):
-            run_path = os.path.join(task_dir, run_id)
-            _, conf = get_model_from_run(run_path, only_conf=True)
-            params = {}
-            params["run_id"] = run_id
-            params["task"] = task
-            params["model"] = conf_to_model_name(conf)
-            params["kwargs"] = "_".join(f"{k}={v}" for k, v in conf.training.task_kwargs.items())
-            num_tasks = (conf.training.num_tasks if "num_tasks" in conf.training else None)
-            params["num_tasks"] = num_tasks if num_tasks is not None else -1
-            num_examples = (conf.training.num_training_examples if "num_training_examples" in conf.training else None)
-            params["num_examples"] = num_examples if num_examples is not None else -1
-            params["n_dims"] = conf.model.n_dims
-            params["n_layer"] = conf.model.n_layer
-            params["n_head"] = conf.model.n_head
-            params["run_name"] = conf.wandb.name
-
-            for k, v in params.items():
-                if k not in all_runs:
-                    all_runs[k] = []
-                all_runs[k].append(v)
-
-    df = pd.DataFrame(all_runs).sort_values("run_name")
-    return df
+def get_run_metrics(config_path, save_path):
+    parser = QuinineArgumentParser(schema=schema)
+    conf = parser.parse_quinfig()
+    all_models = []
+    all_models += models.get_relevant_baselines(conf.training.task)
+    evaluation_kwargs = build_evals(conf)
+    all_metrics = compute_evals(all_models, evaluation_kwargs, save_path)
+    return all_metrics
 
 
 if __name__ == "__main__":
-    run_dir = sys.argv[1]
-    for task in os.listdir(run_dir):
-        task_dir = os.path.join(run_dir, task)
-        print(f"Evaluating task {task}")
-        for run_id in tqdm(os.listdir(task_dir)):
-            run_path = os.path.join(run_dir, task, run_id)
-            metrics = get_run_metrics(run_path)
+    config_path = "conf/logistic_regression.yaml"
+    save_path = "test/out"
+    metrics = get_run_metrics(config_path, save_path)

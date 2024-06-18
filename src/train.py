@@ -1,6 +1,8 @@
 import os
 from random import randint
+import random
 import uuid
+from typing import Optional
 
 from quinine import QuinineArgumentParser
 from tqdm import tqdm
@@ -13,17 +15,18 @@ from samplers import get_data_sampler
 from curriculum import Curriculum
 from schema import schema
 from models import build_model
-from eval import gen_standard, gen_opposite_quadrants, gen_random_quadrants, gen_proj_train_test, gen_orthogonal_train_test
-
+from ood_data_gen import gen_standard, gen_opposite_orthant, gen_random_orthant, gen_orthogonal, gen_projection, gen_expansion
+from tensorboardX import SummaryWriter
 import wandb
 
 torch.backends.cudnn.benchmark = True
 DATAGEN_DICT = {
     "standard": gen_standard,
-    "opposite": gen_opposite_quadrants,
-    "random": gen_random_quadrants,
-    "orthogonal": gen_orthogonal_train_test,
-    "proj": gen_proj_train_test
+    "opposite_orthant": gen_opposite_orthant,
+    "random_orthant": gen_random_orthant,
+    "orthogonal": gen_orthogonal,
+    "projection": gen_projection,
+    "expansion": gen_expansion
 }
 
 
@@ -60,7 +63,20 @@ def train_random_label(model, xs, ys, optimizer, loss_func, random_scheme="norma
     return loss.detach().item(), output.detach()
 
 
-def sample_seeds(total_seeds, count):
+def set_random_seed(random_seed):
+    torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(random_seed)
+
+
+def sample_seeds(total_seeds, count, random_seed: Optional[int] = None):
+    """
+    Get seeds for data sampling. If random_seed is not None, the seeds are sampled from a fixed random seed.
+    """
+    if random_seed is not None:
+        set_random_seed(random_seed)
     seeds = set()
     while len(seeds) < count:
         seeds.add(randint(0, total_seeds - 1))
@@ -122,7 +138,12 @@ def train(model, args):
         loss_func = task.get_training_metric()
 
         if args.training.random_labels != "None":
-            loss, output = train_random_label(model, xs.cuda(), ys.cuda(), optimizer, loss_func, random_scheme=args.training.random_labels)
+            loss, output = train_random_label(model,
+                                              xs.cuda(),
+                                              ys.cuda(),
+                                              optimizer,
+                                              loss_func,
+                                              random_scheme=args.training.random_labels)
         else:
             loss, output = train_step(model, xs.cuda(), ys.cuda(), optimizer, loss_func)
 
@@ -134,17 +155,25 @@ def train(model, args):
                          curriculum.n_points)
 
         if i % args.wandb.log_every_steps == 0 and not args.test_run:
-            wandb.log(
-                {
-                    "overall_loss": loss,
-                    "excess_loss": loss / baseline_loss,
-                    "pointwise/loss": dict(zip(point_wise_tags,
-                                               point_wise_loss.cpu().numpy())),
-                    "n_points": curriculum.n_points,
-                    "n_dims": curriculum.n_dims_truncated,
-                },
-                step=i,
-            )
+            if args.logging == "wandb":
+                wandb.log(
+                    {
+                        "overall_loss": loss,
+                        "excess_loss": loss / baseline_loss,
+                        "pointwise/loss": dict(zip(point_wise_tags,
+                                                   point_wise_loss.cpu().numpy())),
+                        "n_points": curriculum.n_points,
+                        "n_dims": curriculum.n_dims_truncated,
+                    },
+                    step=i,
+                )
+            elif args.logging == "tensorboard":
+                args.writer.add_scalar("overall_loss", loss, i)
+                args.writer.add_scalar("excess_loss", loss / baseline_loss, i)
+                for tag, loss in zip(point_wise_tags, point_wise_loss):
+                    args.writer.add_scalar(f"pointwise/loss/{tag}", loss, i)
+                args.writer.add_scalar("n_points", curriculum.n_points, i)
+                args.writer.add_scalar("n_dims", curriculum.n_dims_truncated, i)
 
         curriculum.update()
 
@@ -175,15 +204,20 @@ def main(args):
         curriculum_args.dims.start = curriculum_args.dims.end
         args.training.train_steps = 100
     else:
-        wandb.init(
-            dir=args.out_dir,
-            project=args.wandb.project,
-            entity=args.wandb.entity,
-            config=args.__dict__,
-            notes=args.wandb.notes,
-            name=args.wandb.name,
-            resume=True,
-        )
+        if args.logging == "wandb":
+            wandb_name = f"{args.run_id}"
+            wandb.init(
+                dir=args.out_dir,
+                project=args.wandb.project,
+                config=args.__dict__,
+                name=wandb_name,
+                resume=True,
+            )
+        elif args.logging == "tensorboard":
+            writer = SummaryWriter(args.out_dir)
+            args.writer = writer
+        else:
+            raise ValueError(f"Unknown logging type: {args.logging}")
 
     model = build_model(args.model)
     model.cuda()
@@ -210,6 +244,7 @@ if __name__ == "__main__":
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         args.out_dir = out_dir
+        args.run_id = run_id
 
         with open(os.path.join(out_dir, "config.yaml"), "w") as yaml_file:
             yaml.dump(args.__dict__, yaml_file, default_flow_style=False)

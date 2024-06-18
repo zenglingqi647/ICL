@@ -76,4 +76,5 @@ schema = {
     "training": stdict(training_schema),
     "wandb": stdict(wandb_schema),
     "test_run": merge(tboolean, default(False)),
+    "logging": merge(tstring, allowed(["wandb", "tensorboard"]), default("wandb")),
 }

@@ -1,4 +1,4 @@
-inherit: 
+inherit:
     - models/standard.yaml
     - wandb.yaml
 

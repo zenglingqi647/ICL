@@ -12,6 +12,6 @@ training:
     train_steps: 32001
 
 out_dir: ../models/logistic_regression
-
+logging: tensorboard
 wandb:
     name: "logistic_regression_standard"

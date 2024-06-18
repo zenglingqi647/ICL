@@ -32,7 +32,7 @@ conda install omegaconf -c conda-forge -y
 ## Run the Code
 Setup:
 ```bash
-cd /Your_src_folder_path
+cd src
 conda activate icl
 export CUDA_VISIBLE_DEVICES=Your_GPU_ID
 ```
@@ -58,6 +58,7 @@ We also experimented noise probabilities of 0.05 and 0.1, which could be run by 
 
 ### Varying problem dimensions
 ```bash
+python train.py --config conf/rbf_lr_noise0.1_dim[10/30/40].yaml
 python train.py --config conf/rbf_lr_noise0.1_dim[10/30/40].yaml
 ```
 
