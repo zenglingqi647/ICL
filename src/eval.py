@@ -6,11 +6,10 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
-import yaml
-
 import models
 from samplers import get_data_sampler, sample_transformation
 from tasks import get_task_sampler
+from omegaconf import OmegaConf
 
 
 def get_model_from_run(run_path, step=-1, only_conf=False):
@@ -34,6 +33,7 @@ def get_model_from_run(run_path, step=-1, only_conf=False):
 
 
 # Functions for evaluation
+
 
 def eval_batch(model, task_sampler, xs, xs_p=None):
     task = task_sampler()

@@ -11,7 +11,14 @@ The conda environment for this project can be installed using the following comm
 conda env create -f environment.yml
 ```
 
-create from scratch:
+install plotly and kaleido:
+```bash
+pip install plotly
+pip install -U kaleido
+pip install nbformat
+
+```
+<!-- create from scratch:
 ```bash
 conda create -n icl python=3.9
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
@@ -20,7 +27,7 @@ conda install tqdm wandb matplotlib pandas -c conda-forge -y
 conda install transformers -c conda-forge -y
 pip install pandas
 conda install omegaconf -c conda-forge -y
-```
+``` -->
 
 ## Run the Code
 Setup:
@@ -117,7 +124,7 @@ python {YOUR_WORKING_DIR}/ICL/src/analysis/randlb.py
 ood data generation and visualization:
 ```bash
 export PYTHONPATH=/csproject/t3_lzengaf/lzengaf/ICL/src
-python src/test/ood_data.py
+python src/ood_data_gen.py
 ```
 
 ## Code Reading Note
