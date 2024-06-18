@@ -1,6 +1,8 @@
 import os
 from random import randint
+import random
 import uuid
+from typing import Optional
 
 from quinine import QuinineArgumentParser
 from tqdm import tqdm
@@ -61,7 +63,20 @@ def train_random_label(model, xs, ys, optimizer, loss_func, random_scheme="norma
     return loss.detach().item(), output.detach()
 
 
-def sample_seeds(total_seeds, count):
+def set_random_seed(random_seed):
+    torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(random_seed)
+
+
+def sample_seeds(total_seeds, count, random_seed: Optional[int] = None):
+    """
+    Get seeds for data sampling. If random_seed is not None, the seeds are sampled from a fixed random seed.
+    """
+    if random_seed is not None:
+        set_random_seed(random_seed)
     seeds = set()
     while len(seeds) < count:
         seeds.add(randint(0, total_seeds - 1))

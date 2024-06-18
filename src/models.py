@@ -329,7 +329,7 @@ class LogisticModel:
 
         # i: loop over num_points
         # j: loop over bsize
-        for i in tqdm(inds, desc="logistic regression"):
+        for i in inds:
             pred = torch.zeros_like(ys[:, 0])
 
             if i > 0:

@@ -25,7 +25,9 @@ def eval_batch(model, task_sampler, xs, xs_p=None):
     else:
         b_size, n_points, _ = xs.shape
         metrics = torch.zeros(b_size, n_points)
-        for i in range(n_points):
+        for i in tqdm(range(n_points)):
+            if i == 0:
+                continue
             xs_comb = torch.cat((xs[:, :i, :], xs_p[:, i:, :]), dim=1)
             ys = task.evaluate(xs_comb)
 
@@ -80,7 +82,7 @@ def eval_model(
     all_metrics = []
 
     generating_func = globals()[f"gen_{prompting_strategy}"]
-    for i in range(num_eval_examples // batch_size):
+    for i in tqdm(range(num_eval_examples // batch_size), ascii=">="):
         xs, xs_p = generating_func(data_sampler, n_points, batch_size)
 
         metrics = eval_batch(model, task_sampler, xs, xs_p)
