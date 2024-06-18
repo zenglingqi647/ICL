@@ -217,18 +217,25 @@ class NoisyLogisticRegression(LogisticRegression):
 
 class RBFLogisticRegression(LogisticRegression):
 
-    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1, same_centers=True):
+    def __init__(self, n_dims, batch_size, pool_dict=None, seeds=None, scale=1):
         super().__init__(n_dims, batch_size, pool_dict, seeds, scale)
-        if same_centers:
-            self.center = torch.randn(size=(1, 1, n_dims))
-        else:
-            self.center = torch.randn(size=(self.b_size, 1, n_dims))
+        # if same_centers:
+        #     self.center = torch.randn(size=(1, 1, n_dims))
+        #     self.radius = torch.rand(1, 1, 1)
+        # else:
+        # self.center = torch.randn(size=(self.b_size, 1, n_dims))
+        self.center = torch.randn(size=(batch_size, 1, n_dims))
+        # Generate radius randomly for each batch
+        self.radius = torch.sqrt(torch.tensor(2 * n_dims)) + torch.randn(batch_size, 1) * 0.1  # Radius around sqrt(2d)
 
     def evaluate(self, xs_b):
         dist = (torch.cdist(xs_b, self.center).squeeze(-1))
-        medians, _ = torch.median(dist, dim=1, keepdim=True)
-        medians += 1e-6
-        return (dist - medians).sign()
+        # medians, _ = torch.median(dist, dim=1, keepdim=True)
+        # medians += 1e-6
+        # return (dist - medians).sign()
+        
+        # Use radius for each batch
+        return (dist - self.radius).sign()
 
 
 class NoisyRBFLogisticRegression(RBFLogisticRegression):

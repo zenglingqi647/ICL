@@ -13,6 +13,24 @@
             "env": {
                 "PYTHONPATH": "/csproject/t3_lzengaf/lzengaf/ICL/src"
             },
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: rbf_logistic_regression",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config",
+                "conf/rbf_logistic_regression.yaml"
+            ],
         },
         {
             "name": "Python: noisy_rbf_capacity",

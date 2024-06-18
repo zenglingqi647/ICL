@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-
 from omegaconf import OmegaConf
 import numpy as np
 import pandas as pd
@@ -65,7 +64,6 @@ def eval_batch(model, task_sampler, xs, xs_p=None):
 def gen_standard(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
     return xs, None
-
 
 def gen_opposite_quadrants(data_sampler, n_points, b_size, n_dims_truncated=None, seeds=None):
     xs = data_sampler.sample_xs(n_points, b_size, n_dims_truncated, seeds)
