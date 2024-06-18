@@ -82,6 +82,7 @@ def get_relevant_baselines(task_name):
             (RBFNNModel, {
                 "n_neighbors": 3
             }),
+            (ConstantRBFModel, {})
         ],
         "sparse_linear_regression": [
             (LeastSquaresModel, {}),
@@ -762,6 +763,40 @@ class SVMModel:
                     y_pred = clf.predict(test_x)
 
                     pred[j] = from_numpy(y_pred[0])
+
+            preds.append(pred)
+
+        return torch.stack(preds, dim=1)
+
+class ConstantRBFModel:
+    def __init__(self):
+        # for the rbf kernelized version, use kernel='rbf'
+        self.name = f"constant_rbf"
+
+    def __call__(self, xs, ys, inds=None):
+        xs, ys = xs.cpu(), ys.cpu()
+
+        if inds is None:
+            inds = range(ys.shape[1])
+        else:
+            if max(inds) >= ys.shape[1] or min(inds) < 0:
+                raise ValueError("inds contain indices where xs and ys are not defined")
+
+        preds = []
+
+        for i in inds:
+            pred = torch.zeros_like(ys[:, 0])
+
+            if i > 0:
+                pred = torch.zeros_like(ys[:, 0])
+                for j in range(ys.shape[0]):
+                    test_x = xs[j, i]
+
+                    # if test_x distance to origin is < sqrt(2d), predict 1, else predict -1
+                    if test_x.norm() < (2 * xs.shape[-1]) ** 0.5:
+                        pred[j] = -1
+                    else:
+                        pred[j] = 1
 
             preds.append(pred)
 
